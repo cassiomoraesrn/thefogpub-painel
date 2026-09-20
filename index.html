@@ -9821,16 +9821,55 @@
 
                 <div class="bandas-header">
                     <div></div>
-                    <button class="add-button" id="btn-promover-evento" onclick="abrirModalPromoverEvento()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                        Promover evento da Agenda
-                    </button>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn-upload" id="btn-criar-evento-direto" onclick="abrirModalCriarEventoDireto()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Criar novo evento
+                        </button>
+                        <button class="add-button" id="btn-promover-evento" onclick="abrirModalPromoverEvento()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Promover evento da Agenda
+                        </button>
+                    </div>
                 </div>
 
                 <div class="conta-usuarios-lista" id="eventos-gerenciados-lista" style="margin-top:16px;"></div>
+            </div>
+
+            <!-- MODAL: CRIAR NOVO EVENTO DIRETO (já nasce com gestão completa,
+                 sem precisar promover um evento já existente na Agenda) -->
+            <div id="modal-criar-evento-direto" class="modal-overlay hidden">
+                <div class="modal-box modal-equipamento-casa-box">
+                    <div class="modal-demanda-header">
+                        <h3>Criar novo evento</h3>
+                        <button class="modal-fechar" onclick="fecharModalCriarEventoDireto()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="demanda-modal-corpo">
+                        <p class="aparencia-bloco-sub" style="margin-top:-4px;">Use isso só pra eventos grandes que já vão nascer com gestão completa (programação, financeiro, etc). Ele também aparece na Agenda normalmente — pra shows do dia a dia, cadastre por lá.</p>
+                        <div class="demanda-campo">
+                            <label>Nome do evento <span class="campo-obrigatorio">*</span></label>
+                            <input type="text" id="criar-evento-direto-nome" class="input-obrigatorio" placeholder="Ex: Oktoberfest, Festival de Verão...">
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Data <span class="campo-obrigatorio">*</span></label>
+                            <input type="date" id="criar-evento-direto-data" class="input-obrigatorio">
+                        </div>
+                    </div>
+                    <div class="modal-evento-footer">
+                        <button class="btn-cancelar-edicao" onclick="fecharModalCriarEventoDireto()">Cancelar</button>
+                        <button class="btn-save" onclick="confirmarCriarEventoDireto()">Criar evento</button>
+                    </div>
+                </div>
             </div>
 
             <!-- PÁGINA: GESTÃO DE UM EVENTO ESPECÍFICO -->
@@ -15791,6 +15830,16 @@
             return;
         }
 
+        await criarEventoGerenciadoAPartirDeAgenda(eventoAgenda);
+        fecharModalPromoverEvento();
+        eventosGerenciadosRender();
+        dashboardRender();
+    }
+
+    // Lógica compartilhada entre "Promover evento da Agenda" (evento já
+    // existe) e "Criar novo evento" (evento acabou de ser criado agora
+    // mesmo) — cria o quadro do Kanban e o registro de gestão completa.
+    async function criarEventoGerenciadoAPartirDeAgenda(eventoAgenda) {
         const nomeQuadro = eventoNomeExibicao(eventoAgenda);
         const novoQuadroId = 'quadro_' + Date.now();
         quadrosKanban.push({ id: novoQuadroId, nome: nomeQuadro, eventoId: eventoAgenda.id, protegido: false });
@@ -15809,10 +15858,56 @@
 
         eventosGerenciados.push(novoEventoGerenciado);
         await sincronizarEventoGerenciado(novoEventoGerenciado.id);
+        return novoEventoGerenciado;
+    }
 
-        fecharModalPromoverEvento();
+    function abrirModalCriarEventoDireto() {
+        document.getElementById('criar-evento-direto-nome').value = '';
+        document.getElementById('criar-evento-direto-data').value = '';
+        const modal = document.getElementById('modal-criar-evento-direto');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalCriarEventoDireto() {
+        const modal = document.getElementById('modal-criar-evento-direto');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    // Cria um evento "grande" direto pela página de Eventos — sem
+    // precisar passar por "promover" um evento que já existia na
+    // Agenda. Ele nasce em AMBOS os lugares: um registro simples na
+    // Agenda (pra aparecer no calendário do dia a dia) e, imediatamente,
+    // o registro de gestão completa. Eventos comuns continuam sendo
+    // cadastrados só pela Agenda, sem gestão nenhuma — essa regra não
+    // muda.
+    async function confirmarCriarEventoDireto() {
+        const nome = document.getElementById('criar-evento-direto-nome').value.trim();
+        const data = document.getElementById('criar-evento-direto-data').value;
+
+        if (!nome || !data) {
+            alert('Nome e data são obrigatórios.');
+            return;
+        }
+
+        const novoEventoAgenda = {
+            id: 'evt_' + Date.now(),
+            data,
+            nomeEvento: nome,
+            bandas: [],
+            descricaoEvento: '',
+            status: 'confirmado'
+        };
+        eventos.push(novoEventoAgenda);
+        salvarEventosStorage();
+
+        await criarEventoGerenciadoAPartirDeAgenda(novoEventoAgenda);
+
+        fecharModalCriarEventoDireto();
         eventosGerenciadosRender();
         dashboardRender();
+        if (typeof agendaRender === 'function') agendaRender();
     }
 
     function abrirEventoGestao(eventoId) {
