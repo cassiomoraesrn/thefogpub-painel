@@ -7927,6 +7927,22 @@
         </div>
     </div>
 
+    <!-- TELA ESPECÍFICA PRA QUANDO O ARQUIVO É ABERTO DENTRO DE UMA
+         PRÉ-VISUALIZAÇÃO (Claude Desktop, editores com preview embutido,
+         etc.) — esses ambientes rodam a página isolada e não conseguem
+         se conectar de verdade com o Supabase. Isso NÃO é um erro do
+         painel: é esperado, e a solução é abrir o link publicado num
+         navegador de verdade. -->
+    <div id="supabasePreviewNaoSuportadoScreen" class="cadastro-publico-container hidden" style="z-index:5000;">
+        <div class="cadastro-publico-box" style="text-align:center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#92400E" stroke-width="2" style="margin:0 auto 16px;">
+                <path d="M13 2 L3 14 h9 l-1 8 10-12h-9z"></path>
+            </svg>
+            <h1 style="font-size:20px;">Esta pré-visualização não suporta o painel</h1>
+            <p class="cadastro-publico-intro" style="text-align:center;">Você está vendo esse arquivo dentro de uma janela de pré-visualização (como o preview do Claude Desktop), que roda a página de forma isolada e não consegue se conectar ao banco de dados de verdade. Isso não é um erro — é esperado nesse tipo de ambiente. Abra o link publicado (thefogpub-teste.netlify.app) direto num navegador comum, como Chrome ou Firefox, pra usar o painel normalmente.</p>
+        </div>
+    </div>
+
     <!-- TELA DE LOGIN -->
     <div id="loginScreen" class="login-container">
         <div class="login-box">
@@ -14784,10 +14800,26 @@
 
     let eventosGerenciados = [];
 
+    // Detecta se está rodando dentro de uma pré-visualização isolada
+    // (Claude Desktop e ferramentas parecidas usam essa técnica pra
+    // exibir o HTML sem navegar de verdade pra ele).
+    function estaEmPreviewIsolado() {
+        try {
+            return location.href.startsWith('about:srcdoc') || window.self !== window.top;
+        } catch (e) {
+            return true; // se nem der pra checar window.top, é sinal de sandbox
+        }
+    }
+
     function mostrarErroConexaoSupabase() {
         document.getElementById('loginScreen').classList.add('hidden');
         document.getElementById('painelScreen').classList.add('hidden');
-        document.getElementById('supabaseErroConexaoScreen').classList.remove('hidden');
+
+        if (estaEmPreviewIsolado()) {
+            document.getElementById('supabasePreviewNaoSuportadoScreen').classList.remove('hidden');
+        } else {
+            document.getElementById('supabaseErroConexaoScreen').classList.remove('hidden');
+        }
     }
 
     async function testarConexaoSupabase() {
