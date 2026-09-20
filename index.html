@@ -14778,7 +14778,9 @@
     let supabaseClient = null;
     try {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    } catch (e) {}
+    } catch (e) {
+        console.error('Falha ao criar o cliente do Supabase (biblioteca não carregou?):', e.message);
+    }
 
     let eventosGerenciados = [];
 
@@ -14792,13 +14794,13 @@
         try {
             const { error } = await supabaseClient.from('eventos').select('id').limit(1);
             if (error) {
-                console.error('Erro de conexão com o Supabase:', error);
+                console.error('Erro de conexão com o Supabase — mensagem:', error.message, '| código:', error.code, '| detalhes:', error.details, '| hint:', error.hint, '| objeto completo:', JSON.stringify(error));
                 mostrarErroConexaoSupabase();
                 return false;
             }
             return true;
         } catch (e) {
-            console.error('Exceção ao conectar com o Supabase:', e);
+            console.error('Exceção ao conectar com o Supabase — mensagem:', e.message, '| nome:', e.name, '| stack:', e.stack);
             mostrarErroConexaoSupabase();
             return false;
         }
