@@ -11725,7 +11725,7 @@
     } catch (e) {}
 
     function salvarLixeiraStorage() {
-        try { localStorage.setItem(storageKey('lixeira'), JSON.stringify(lixeira)); } catch(e) {}
+        sincronizarConfig('lixeira');
     }
 
     function moverParaLixeira(tipo, nome, dados, chaveOriginal) {
@@ -13072,7 +13072,7 @@
     }
 
     function salvarEquipamentosCasaStorage() {
-        localStorage.setItem(storageKey('equipamentosCasa'), JSON.stringify(equipamentosCasa));
+        sincronizarConfig('equipamentos_casa');
     }
 
     const ICONE_EQUIPAMENTO = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"></path></svg>';
@@ -13272,7 +13272,7 @@
     }
 
     function salvarIntegracoesStorage() {
-        localStorage.setItem(storageKey('integracoes'), JSON.stringify(integracoesLista));
+        sincronizarConfig('integracoes');
     }
 
     function integracaoFormatarData(iso) {
@@ -13510,18 +13510,14 @@
             if (!suporteMensagens[s.id]) { suporteMensagens[s.id] = []; precisaSalvar = true; }
         });
         if (precisaSalvar) {
-            try {
-                localStorage.setItem(storageKey('suporteFAQs'), JSON.stringify(suporteFAQs));
-                localStorage.setItem(storageKey('suporteMensagens'), JSON.stringify(suporteMensagens));
-            } catch (e) {}
+            sincronizarConfig('suporte_faqs');
+            sincronizarConfig('suporte_mensagens');
         }
     }
 
     function salvarSuporteStorage() {
-        try {
-            localStorage.setItem(storageKey('suporteFAQs'), JSON.stringify(suporteFAQs));
-            localStorage.setItem(storageKey('suporteMensagens'), JSON.stringify(suporteMensagens));
-        } catch (e) {}
+        sincronizarConfig('suporte_faqs');
+        sincronizarConfig('suporte_mensagens');
     }
 
     function suporteMarcarComoLido(sistemaId) {
@@ -15329,6 +15325,99 @@
         });
     }
 
+    // =====================================================
+    //  CONFIGURAÇÕES GERAIS — Aparência, Integrações, Suporte (FAQs e
+    //  mensagens), Categorias customizadas, Datas especiais, Equipamentos
+    //  da casa, Lixeira e Template de tarefas. Nenhum desses cresce sem
+    //  limite nem precisa de consulta relacional — por isso todos vivem
+    //  como linhas numa única tabela genérica de chave/valor
+    //  (app_config), em vez de uma tabela dedicada pra cada um.
+    // =====================================================
+    const CHAVES_APP_CONFIG = ['aparencia', 'integracoes', 'suporte_faqs', 'suporte_mensagens', 'categorias_custom', 'datas_especiais', 'equipamentos_casa', 'lixeira', 'template_tarefas'];
+
+    function valorAtualDaChaveConfig(chave) {
+        switch (chave) {
+            case 'aparencia': return aparenciaConfig;
+            case 'integracoes': return integracoesLista;
+            case 'suporte_faqs': return suporteFAQs;
+            case 'suporte_mensagens': return suporteMensagens;
+            case 'categorias_custom': return categoriasCustomCache;
+            case 'datas_especiais': return datasEspeciaisPersonalizadas;
+            case 'equipamentos_casa': return equipamentosCasa;
+            case 'lixeira': return lixeira;
+            case 'template_tarefas': return templateTarefasCache;
+        }
+    }
+
+    function aplicarValorNaChaveConfig(chave, valor) {
+        switch (chave) {
+            case 'aparencia': Object.assign(aparenciaConfig, valor); break;
+            case 'integracoes': integracoesLista = valor; break;
+            case 'suporte_faqs': suporteFAQs = valor; break;
+            case 'suporte_mensagens': suporteMensagens = valor; break;
+            case 'categorias_custom': categoriasCustomCache = valor; break;
+            case 'datas_especiais': datasEspeciaisPersonalizadas = valor; break;
+            case 'equipamentos_casa': equipamentosCasa = valor; break;
+            case 'lixeira': lixeira = valor; break;
+            case 'template_tarefas': templateTarefasCache = valor; break;
+        }
+    }
+
+    async function carregarAppConfigDoSupabase() {
+        const { data, error } = await supabaseClient.from('app_config').select('*');
+        if (error) { mostrarErroConexaoSupabase(); return false; }
+
+        const linhasParaSemear = [];
+        CHAVES_APP_CONFIG.forEach(chave => {
+            const linha = data.find(r => r.chave === chave);
+            if (linha) {
+                aplicarValorNaChaveConfig(chave, linha.valor);
+            } else {
+                linhasParaSemear.push(chave);
+            }
+        });
+
+        if (linhasParaSemear.length > 0) {
+            await Promise.all(linhasParaSemear.map(chave => sincronizarConfig(chave)));
+        }
+        return true;
+    }
+
+    async function sincronizarConfig(chave) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('app_config').upsert({
+            chave, valor: valorAtualDaChaveConfig(chave), atualizado_em: new Date().toISOString()
+        });
+    }
+
+    let recarregandoAppConfig = false;
+    async function recarregarAppConfigERerenderizar() {
+        if (recarregandoAppConfig) return;
+        recarregandoAppConfig = true;
+        const ok = await carregarAppConfigDoSupabase();
+        recarregandoAppConfig = false;
+        if (!ok) return;
+
+        aparenciaAplicarTudo();
+        integracoesRender();
+        suporteRender();
+        datasEspeciaisPersonalizadasRender();
+        equipamentosCasaRenderTudo();
+        lixeiraRender();
+        templateRender();
+    }
+
+    function iniciarRealtimeAppConfig() {
+        if (!supabaseClient) return;
+        const canal = supabaseClient.channel('app-config-realtime');
+        canal.on('postgres_changes', { event: '*', schema: 'public', table: 'app_config' }, () => {
+            recarregarAppConfigERerenderizar();
+        });
+        canal.subscribe((status, err) => {
+            console.log('Realtime (configurações): status da inscrição:', status, err || '');
+        });
+    }
+
     function eventoNomeExibicao(evento) {
         return evento.nomeEvento || evento.bandas.map(b => nomeBandaPorId(b.bandaId)).join(' + ') || 'Evento';
     }
@@ -16495,7 +16584,7 @@
     }
 
     function salvarDatasEspeciaisPersonalizadasStorage() {
-        localStorage.setItem(storageKey('datasEspeciaisPersonalizadas'), JSON.stringify(datasEspeciaisPersonalizadas));
+        sincronizarConfig('datas_especiais');
     }
 
     const NOMES_MESES_CURTO = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -18731,17 +18820,18 @@
         ];
     }
 
+    // Cache em memória — mesmo esquema de categoriasCustomCache, agora
+    // alimentado pelo Supabase (chave 'template_tarefas').
+    let templateTarefasCache = null;
+
     function carregarTemplateTarefas() {
-        try {
-            const salvo = localStorage.getItem(storageKey('templateTarefas'));
-            return salvo ? JSON.parse(salvo) : templateTarefasSeedPadrao();
-        } catch (e) {
-            return templateTarefasSeedPadrao();
-        }
+        if (templateTarefasCache === null) templateTarefasCache = templateTarefasSeedPadrao();
+        return templateTarefasCache;
     }
 
     function salvarTemplateTarefasStorage(lista) {
-        try { localStorage.setItem(storageKey('templateTarefas'), JSON.stringify(lista)); } catch (e) {}
+        templateTarefasCache = lista;
+        sincronizarConfig('template_tarefas');
     }
 
     function abrirMiniPainelTarefas() {
@@ -18803,15 +18893,17 @@
     //  em CATEGORIAS_TAREFA no código. Categorias criadas pelo
     //  usuário ficam salvas no localStorage e são mescladas.
     // =====================================================
+    // Cache em memória — evita reler/gravar toda vez; agora alimentado
+    // pelo Supabase (chave 'categorias_custom' na tabela app_config).
+    let categoriasCustomCache = {};
+
     function carregarCategoriasCustom() {
-        try {
-            const s = localStorage.getItem(storageKey('categoriasCustom'));
-            return s ? JSON.parse(s) : {};
-        } catch (e) { return {}; }
+        return categoriasCustomCache;
     }
 
     function salvarCategoriasCustom(obj) {
-        try { localStorage.setItem(storageKey('categoriasCustom'), JSON.stringify(obj)); } catch (e) {}
+        categoriasCustomCache = obj;
+        sincronizarConfig('categorias_custom');
     }
 
     function todasCategorias() {
@@ -19705,7 +19797,7 @@
     }
 
     function salvarAparenciaStorage() {
-        try { localStorage.setItem(storageKey('aparencia'), JSON.stringify(aparenciaConfig)); } catch(e) {}
+        sincronizarConfig('aparencia');
     }
 
     // Escurece um hex em X% — usado só para derivar a cor de borda (--line)
@@ -21539,6 +21631,9 @@
         carregarEquipamentosCasa();
         carregarIntegracoes();
         carregarSuporte();
+        carregarTemplateTarefas(); // força inicializar o cache antes de semear o Supabase
+        await carregarAppConfigDoSupabase();
+        iniciarRealtimeAppConfig();
 
         // Migrações e carregamento de dados — tudo isso roda ANTES de
         // qualquer render (inclusive o Dashboard), pra nenhuma tela
