@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Roboto:wght@400;500;700&family=Merriweather:wght@400;700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -7912,6 +7913,20 @@
     </style>
 </head>
 <body>
+    <!-- TELA DE ERRO DE CONEXÃO COM O SUPABASE (bloqueia o painel até reconectar) -->
+    <div id="supabaseErroConexaoScreen" class="cadastro-publico-container hidden" style="z-index:5000;">
+        <div class="cadastro-publico-box" style="text-align:center;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#991B1B" stroke-width="2" style="margin:0 auto 16px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <h1 style="font-size:20px;">Sem conexão com o servidor</h1>
+            <p class="cadastro-publico-intro" style="text-align:center;">Não consegui conectar com o banco de dados da Gestão de Eventos. Verifique sua internet e tente de novo — os dados desse módulo não carregam sem essa conexão.</p>
+            <button class="login-button" onclick="location.reload()">Tentar novamente</button>
+        </div>
+    </div>
+
     <!-- TELA DE LOGIN -->
     <div id="loginScreen" class="login-container">
         <div class="login-box">
@@ -14749,12 +14764,169 @@
     }
 
     // =====================================================
-    //  GESTÃO DE EVENTOS — módulo isolado e genérico (sem depender de
-    //  bandas/clientes/nome do bar), pensado pra poder ser extraído
-    //  no futuro como produto próprio, vendável a outros organizadores.
-    //  Funciona "por cima" de um evento já existente na Agenda — não
-    //  duplica data/nome, só adiciona campos quando o evento é promovido.
+    //  GESTÃO DE EVENTOS — agora sincronizado com o Supabase.
+    //  Diferente do resto do painel (que vive só no navegador), essa
+    //  área precisa que várias pessoas em dispositivos diferentes vejam
+    //  os mesmos dados — por isso ela é a primeira a sair do localStorage
+    //  puro. "eventosGerenciados" é a fonte de verdade, carregada do
+    //  banco; nada aqui depende do array local "eventos" da Agenda,
+    //  exceto na hora de "promover" um evento (que só usa o nome/data
+    //  dali como ponto de partida).
     // =====================================================
+    const SUPABASE_URL = 'https://pqeriwuyspvfpbqmhzwd.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_XVMwSvuW1JPghVxA9bj7kw_Y_l0JosN';
+    let supabaseClient = null;
+    try {
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } catch (e) {}
+
+    let eventosGerenciados = [];
+
+    function mostrarErroConexaoSupabase() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('painelScreen').classList.add('hidden');
+        document.getElementById('supabaseErroConexaoScreen').classList.remove('hidden');
+    }
+
+    async function testarConexaoSupabase() {
+        try {
+            const { error } = await supabaseClient.from('eventos').select('id').limit(1);
+            if (error) { mostrarErroConexaoSupabase(); return false; }
+            return true;
+        } catch (e) {
+            mostrarErroConexaoSupabase();
+            return false;
+        }
+    }
+
+    async function carregarEventosGerenciadosDoSupabase() {
+        const [eventosR, progR, checkR, fornR, equipeR, patroR, loteR, lancR] = await Promise.all([
+            supabaseClient.from('eventos').select('*'),
+            supabaseClient.from('programacao_itens').select('*'),
+            supabaseClient.from('checklist_itens').select('*'),
+            supabaseClient.from('fornecedores').select('*'),
+            supabaseClient.from('equipe_itens').select('*'),
+            supabaseClient.from('patrocinios').select('*'),
+            supabaseClient.from('lotes_ingresso').select('*'),
+            supabaseClient.from('lancamentos_financeiros').select('*')
+        ]);
+
+        if (eventosR.error || progR.error || checkR.error || fornR.error || equipeR.error || patroR.error || loteR.error || lancR.error) {
+            mostrarErroConexaoSupabase();
+            return false;
+        }
+
+        eventosGerenciados = eventosR.data.map(row => ({
+            id: row.id,
+            nomeEvento: row.nome,
+            data: row.data,
+            descricaoEvento: row.descricao || '',
+            gestaoCompletaAtiva: true,
+            quadroKanbanId: row.quadro_kanban_id,
+            programacao: progR.data.filter(p => p.evento_id === row.id)
+                .map(p => ({ id: p.id, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor })),
+            checklist: checkR.data.filter(c => c.evento_id === row.id)
+                .map(c => ({ id: c.id, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo, status: c.status })),
+            fornecedores: fornR.data.filter(f => f.evento_id === row.id)
+                .map(f => ({ id: f.id, nome: f.nome, servico: f.servico, contato: f.contato, valor: f.valor, statusPagamento: f.status_pagamento })),
+            equipe: equipeR.data.filter(eq => eq.evento_id === row.id)
+                .map(eq => ({ id: eq.id, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato })),
+            patrocinios: patroR.data.filter(p => p.evento_id === row.id)
+                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), statusPagamento: p.status_pagamento })),
+            lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
+                .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
+            financeiro: {
+                lancamentos: lancR.data.filter(l => l.evento_id === row.id)
+                    .map(l => ({ id: l.id, tipo: l.tipo, origem: l.origem, loteId: l.lote_id, descricao: l.descricao, valor: parseFloat(l.valor), data: l.data }))
+            }
+        }));
+        return true;
+    }
+
+    // Estratégia de sincronização: apaga tudo daquele evento nas tabelas
+    // filhas e reinsere o estado atual inteiro. Mais simples e mais fácil
+    // de manter correto do que calcular diffs campo a campo — o volume de
+    // dado por evento é pequeno o suficiente pra isso não pesar.
+    async function sincronizarEventoGerenciado(eventoId) {
+        const evento = eventosGerenciados.find(e => e.id === eventoId);
+        if (!evento || !supabaseClient) return;
+
+        await supabaseClient.from('eventos').upsert({
+            id: evento.id, nome: evento.nomeEvento, data: evento.data, descricao: evento.descricaoEvento,
+            gestao_completa_ativa: true, quadro_kanban_id: evento.quadroKanbanId, atualizado_em: new Date().toISOString()
+        });
+
+        // Lançamentos primeiro (referenciam lote_id) e lotes depois, na exclusão
+        await supabaseClient.from('lancamentos_financeiros').delete().eq('evento_id', eventoId);
+        await Promise.all([
+            supabaseClient.from('programacao_itens').delete().eq('evento_id', eventoId),
+            supabaseClient.from('checklist_itens').delete().eq('evento_id', eventoId),
+            supabaseClient.from('fornecedores').delete().eq('evento_id', eventoId),
+            supabaseClient.from('equipe_itens').delete().eq('evento_id', eventoId),
+            supabaseClient.from('patrocinios').delete().eq('evento_id', eventoId),
+            supabaseClient.from('lotes_ingresso').delete().eq('evento_id', eventoId)
+        ]);
+
+        const inserts = [];
+        if (evento.programacao.length) inserts.push(supabaseClient.from('programacao_itens').insert(
+            evento.programacao.map(p => ({ id: p.id, evento_id: eventoId, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor }))));
+        if (evento.checklist.length) inserts.push(supabaseClient.from('checklist_itens').insert(
+            evento.checklist.map(c => ({ id: c.id, evento_id: eventoId, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo || null, status: c.status }))));
+        if (evento.fornecedores.length) inserts.push(supabaseClient.from('fornecedores').insert(
+            evento.fornecedores.map(f => ({ id: f.id, evento_id: eventoId, nome: f.nome, servico: f.servico, contato: f.contato, valor: f.valor, status_pagamento: f.statusPagamento }))));
+        if (evento.equipe.length) inserts.push(supabaseClient.from('equipe_itens').insert(
+            evento.equipe.map(eq => ({ id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato }))));
+        if (evento.patrocinios.length) inserts.push(supabaseClient.from('patrocinios').insert(
+            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, entregaveis: p.entregaveis, status_pagamento: p.statusPagamento }))));
+        if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
+            evento.lotesIngresso.map(l => ({ id: l.id, evento_id: eventoId, nome: l.nome, preco_unitario: l.precoUnitario, quantidade_total: l.quantidadeTotal, inclui: l.inclui }))));
+
+        await Promise.all(inserts);
+
+        if (evento.financeiro.lancamentos.length) {
+            await supabaseClient.from('lancamentos_financeiros').insert(
+                evento.financeiro.lancamentos.map(l => ({ id: l.id, evento_id: eventoId, tipo: l.tipo, origem: l.origem || null, lote_id: l.loteId || null, descricao: l.descricao, valor: l.valor, data: l.data || null })));
+        }
+    }
+
+    let recarregandoEventosGerenciados = false;
+    async function recarregarEventosGerenciadosERerenderizar() {
+        if (recarregandoEventosGerenciados) return;
+        recarregandoEventosGerenciados = true;
+        const ok = await carregarEventosGerenciadosDoSupabase();
+        recarregandoEventosGerenciados = false;
+        if (!ok) return;
+
+        if (document.getElementById('eventos-page') && !document.getElementById('eventos-page').classList.contains('hidden')) {
+            eventosGerenciadosRender();
+        }
+        if (eventoGestaoAtualId && document.getElementById('evento-gestao-page') && !document.getElementById('evento-gestao-page').classList.contains('hidden')) {
+            if (eventosGerenciados.find(e => e.id === eventoGestaoAtualId)) {
+                eventoGestaoRenderResumoFinanceiro();
+                eventoGestaoRenderProgramacao();
+                eventoGestaoRenderChecklist();
+                eventoGestaoRenderFornecedores();
+                eventoGestaoRenderEquipe();
+                eventoGestaoRenderPatrocinios();
+                eventoGestaoRenderLotes();
+                eventoGestaoRenderFinanceiro();
+            }
+        }
+        dashboardRenderEventosGerenciados();
+    }
+
+    function iniciarRealtimeEventosGerenciados() {
+        if (!supabaseClient) return;
+        const tabelas = ['eventos', 'programacao_itens', 'checklist_itens', 'fornecedores', 'equipe_itens', 'patrocinios', 'lotes_ingresso', 'lancamentos_financeiros'];
+        const canal = supabaseClient.channel('eventos-realtime');
+        tabelas.forEach(tabela => {
+            canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela }, () => {
+                recarregarEventosGerenciadosERerenderizar();
+            });
+        });
+        canal.subscribe();
+    }
+
     function eventoNomeExibicao(evento) {
         return evento.nomeEvento || evento.bandas.map(b => nomeBandaPorId(b.bandaId)).join(' + ') || 'Evento';
     }
@@ -14769,8 +14941,7 @@
         const lista = document.getElementById('eventos-gerenciados-lista');
         if (!lista) return;
 
-        const gerenciados = eventos.filter(e => e.gestaoCompletaAtiva)
-            .sort((a, b) => b.data.localeCompare(a.data));
+        const gerenciados = eventosGerenciados.slice().sort((a, b) => b.data.localeCompare(a.data));
 
         if (gerenciados.length === 0) {
             lista.innerHTML = '<div class="bandas-vazio">Nenhum evento com gestão completa ainda. Promova um evento da Agenda pra começar.</div>';
@@ -14794,7 +14965,8 @@
 
     function abrirModalPromoverEvento() {
         const select = document.getElementById('promover-evento-select');
-        const disponiveis = eventos.filter(e => !e.gestaoCompletaAtiva).sort((a, b) => a.data.localeCompare(b.data));
+        const idsJaGerenciados = new Set(eventosGerenciados.map(e => e.id));
+        const disponiveis = eventos.filter(e => !idsJaGerenciados.has(e.id)).sort((a, b) => a.data.localeCompare(b.data));
 
         if (disponiveis.length === 0) {
             select.innerHTML = '<option value="">Nenhum evento disponível na Agenda</option>';
@@ -14816,34 +14988,40 @@
         modal.classList.remove('active');
     }
 
-    function confirmarPromoverEvento() {
+    async function confirmarPromoverEvento() {
         const eventoId = document.getElementById('promover-evento-select').value;
-        const evento = eventos.find(e => e.id === eventoId);
-        if (!evento) {
+        const eventoAgenda = eventos.find(e => e.id === eventoId);
+        if (!eventoAgenda) {
             alert('Escolha um evento.');
             return;
         }
 
-        evento.gestaoCompletaAtiva = true;
-        evento.programacao = evento.programacao || [];
-        evento.patrocinios = evento.patrocinios || [];
-        evento.financeiro = evento.financeiro || { lancamentos: [] };
-
-        // Cria automaticamente o quadro dedicado no Kanban do Marketing
-        const nomeQuadro = eventoNomeExibicao(evento);
+        const nomeQuadro = eventoNomeExibicao(eventoAgenda);
         const novoQuadroId = 'quadro_' + Date.now();
-        quadrosKanban.push({ id: novoQuadroId, nome: nomeQuadro, eventoId: evento.id, protegido: false });
+        quadrosKanban.push({ id: novoQuadroId, nome: nomeQuadro, eventoId: eventoAgenda.id, protegido: false });
         salvarQuadrosKanbanStorage();
-        evento.quadroKanbanId = novoQuadroId;
 
-        salvarEventosStorage();
+        const novoEventoGerenciado = {
+            id: eventoAgenda.id,
+            nomeEvento: nomeQuadro,
+            data: eventoAgenda.data,
+            descricaoEvento: eventoAgenda.descricaoEvento || '',
+            gestaoCompletaAtiva: true,
+            quadroKanbanId: novoQuadroId,
+            programacao: [], checklist: [], fornecedores: [], equipe: [], patrocinios: [], lotesIngresso: [],
+            financeiro: { lancamentos: [] }
+        };
+
+        eventosGerenciados.push(novoEventoGerenciado);
+        await sincronizarEventoGerenciado(novoEventoGerenciado.id);
+
         fecharModalPromoverEvento();
         eventosGerenciadosRender();
         dashboardRender();
     }
 
     function abrirEventoGestao(eventoId) {
-        const evento = eventos.find(e => e.id === eventoId);
+        const evento = eventosGerenciados.find(e => e.id === eventoId);
         if (!evento) return;
         eventoGestaoAtualId = eventoId;
 
@@ -14908,7 +15086,7 @@
             container.innerHTML = '';
             return;
         }
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
         const lucro = eventoCalcularLucro(evento);
         container.innerHTML = `
@@ -14918,7 +15096,7 @@
 
     // ---------- PROGRAMAÇÃO ----------
     function eventoGestaoRenderProgramacao() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const lista = document.getElementById('evento-gestao-programacao-lista');
         if (!evento || !lista) return;
 
@@ -14943,7 +15121,7 @@
     }
 
     function abrirModalProgramacaoItem(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const item = id ? (evento.programacao || []).find(i => i.id === id) : null;
 
         document.getElementById('programacao-item-titulo-modal').textContent = item ? 'Editar item da programação' : 'Novo item da programação';
@@ -14964,8 +15142,8 @@
         modal.classList.remove('active');
     }
 
-    function salvarProgramacaoItem() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+    async function salvarProgramacaoItem() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
         evento.programacao = evento.programacao || [];
 
@@ -14990,24 +15168,349 @@
             evento.programacao.push({ id: 'prog_' + Date.now(), ...dados });
         }
 
-        salvarEventosStorage();
+        await sincronizarEventoGerenciado(evento.id);
         fecharModalProgramacaoItem();
         eventoGestaoRenderProgramacao();
     }
 
-    function excluirProgramacaoItem(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+    async function excluirProgramacaoItem(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        customConfirm('Excluir item da programação?', 'Essa ação não pode ser desfeita.', () => {
+        customConfirm('Excluir item da programação?', 'Essa ação não pode ser desfeita.', async () => {
             evento.programacao = (evento.programacao || []).filter(i => i.id !== id);
-            salvarEventosStorage();
+            await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderProgramacao();
         }, 'Excluir');
     }
 
+    // ---------- CHECKLIST DE PRODUÇÃO ----------
+    function eventoGestaoRenderChecklist() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-checklist-lista');
+        if (!evento || !lista) return;
+
+        const itens = evento.checklist || [];
+        if (itens.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Nenhum item no checklist ainda.</div>';
+            return;
+        }
+
+        const ordenados = itens.slice().sort((a, b) => (a.status === 'feito') - (b.status === 'feito'));
+
+        lista.innerHTML = ordenados.map(item => `
+            <div class="usuario-item">
+                <button class="btn-icon-acao ${item.status === 'feito' ? 'ativa' : ''}" onclick="alternarStatusChecklist('${item.id}')" title="${item.status === 'feito' ? 'Marcar como pendente' : 'Marcar como feito'}" style="${item.status === 'feito' ? 'background:#DCFCE7; color:#166534;' : ''}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </button>
+                <div class="usuario-item-info">
+                    <div class="usuario-item-nome" style="${item.status === 'feito' ? 'text-decoration:line-through; color:var(--warm-gray);' : ''}">${item.titulo}</div>
+                    <div class="usuario-item-detalhe">${item.responsavel ? 'Responsável: ' + item.responsavel : 'Sem responsável definido'}${item.prazo ? ' · Prazo: ' + new Date(item.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
+                </div>
+                <div class="usuario-item-acoes">
+                    <button class="btn-icon-acao" onclick="abrirModalChecklistItem('${item.id}')" title="Editar">${ICONE_EDITAR}</button>
+                    <button class="btn-icon-acao excluir" onclick="excluirChecklistItem('${item.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                </div>
+            </div>`).join('');
+    }
+
+    async function alternarStatusChecklist(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const item = (evento.checklist || []).find(i => i.id === id);
+        if (!item) return;
+        item.status = item.status === 'feito' ? 'pendente' : 'feito';
+        await sincronizarEventoGerenciado(evento.id);
+        eventoGestaoRenderChecklist();
+    }
+
+    function abrirModalChecklistItem(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const item = id ? (evento.checklist || []).find(i => i.id === id) : null;
+
+        document.getElementById('checklist-item-titulo-modal').textContent = item ? 'Editar item do checklist' : 'Novo item do checklist';
+        document.getElementById('checklist-item-id').value = item ? item.id : '';
+        document.getElementById('checklist-item-titulo').value = item ? item.titulo : '';
+        document.getElementById('checklist-item-responsavel').value = item ? (item.responsavel || '') : '';
+        document.getElementById('checklist-item-prazo').value = item ? (item.prazo || '') : '';
+        document.getElementById('checklist-item-status').value = item ? item.status : 'pendente';
+
+        const modal = document.getElementById('modal-checklist-item');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalChecklistItem() {
+        const modal = document.getElementById('modal-checklist-item');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    async function salvarChecklistItem() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.checklist = evento.checklist || [];
+
+        const idExistente = document.getElementById('checklist-item-id').value;
+        const titulo = document.getElementById('checklist-item-titulo').value.trim();
+        if (!titulo) { alert('Descreva o que precisa ser feito.'); return; }
+
+        const dados = {
+            titulo,
+            responsavel: document.getElementById('checklist-item-responsavel').value.trim(),
+            prazo: document.getElementById('checklist-item-prazo').value,
+            status: document.getElementById('checklist-item-status').value
+        };
+
+        if (idExistente) {
+            const item = evento.checklist.find(i => i.id === idExistente);
+            if (item) Object.assign(item, dados);
+        } else {
+            evento.checklist.push({ id: 'check_' + Date.now(), ...dados });
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalChecklistItem();
+        eventoGestaoRenderChecklist();
+    }
+
+    async function excluirChecklistItem(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Excluir esse item do checklist?', 'Essa ação não pode ser desfeita.', async () => {
+            evento.checklist = (evento.checklist || []).filter(i => i.id !== id);
+            await sincronizarEventoGerenciado(evento.id);
+            eventoGestaoRenderChecklist();
+        }, 'Excluir');
+    }
+
+    // ---------- FORNECEDORES ----------
+    function eventoGestaoRenderFornecedores() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-fornecedores-lista');
+        if (!evento || !lista) return;
+
+        const itens = evento.fornecedores || [];
+        if (itens.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Nenhum fornecedor cadastrado ainda.</div>';
+            return;
+        }
+
+        const corStatus = { pendente: '#92400E', parcial: '#1D4ED8', pago: '#166534' };
+        const labelStatus = { pendente: 'Pendente', parcial: 'Parcial', pago: 'Pago' };
+
+        lista.innerHTML = itens.map(f => `
+            <div class="usuario-item">
+                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${f.nome.charAt(0).toUpperCase()}</div>
+                <div class="usuario-item-info">
+                    <div class="usuario-item-nome">${f.nome}</div>
+                    <div class="usuario-item-detalhe">${f.servico || '—'}${f.contato ? ' · ' + f.contato : ''}${f.valor ? ' · ' + f.valor : ''}</div>
+                </div>
+                <span class="cliente-item-idade-badge" style="background:${corStatus[f.statusPagamento]}20; color:${corStatus[f.statusPagamento]};">${labelStatus[f.statusPagamento]}</span>
+                <div class="usuario-item-acoes">
+                    <button class="btn-icon-acao" onclick="abrirModalFornecedor('${f.id}')" title="Editar">${ICONE_EDITAR}</button>
+                    <button class="btn-icon-acao excluir" onclick="excluirFornecedor('${f.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                </div>
+            </div>`).join('');
+    }
+
+    function abrirModalFornecedor(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const f = id ? (evento.fornecedores || []).find(x => x.id === id) : null;
+
+        document.getElementById('fornecedor-titulo-modal').textContent = f ? 'Editar fornecedor' : 'Novo fornecedor';
+        document.getElementById('fornecedor-id').value = f ? f.id : '';
+        document.getElementById('fornecedor-nome').value = f ? f.nome : '';
+        document.getElementById('fornecedor-servico').value = f ? (f.servico || '') : '';
+        document.getElementById('fornecedor-contato').value = f ? (f.contato || '') : '';
+        document.getElementById('fornecedor-valor').value = f ? (f.valor || '') : '';
+        document.getElementById('fornecedor-status-pagamento').value = f ? f.statusPagamento : 'pendente';
+
+        const modal = document.getElementById('modal-fornecedor');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalFornecedor() {
+        const modal = document.getElementById('modal-fornecedor');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    async function salvarFornecedor() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.fornecedores = evento.fornecedores || [];
+
+        const idExistente = document.getElementById('fornecedor-id').value;
+        const nome = document.getElementById('fornecedor-nome').value.trim();
+        if (!nome) { alert('Informe o nome do fornecedor.'); return; }
+
+        const dados = {
+            nome,
+            servico: document.getElementById('fornecedor-servico').value.trim(),
+            contato: document.getElementById('fornecedor-contato').value.trim(),
+            valor: document.getElementById('fornecedor-valor').value.trim(),
+            statusPagamento: document.getElementById('fornecedor-status-pagamento').value
+        };
+
+        if (idExistente) {
+            const f = evento.fornecedores.find(x => x.id === idExistente);
+            if (f) Object.assign(f, dados);
+        } else {
+            evento.fornecedores.push({ id: 'forn_' + Date.now(), ...dados });
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalFornecedor();
+        eventoGestaoRenderFornecedores();
+    }
+
+    async function excluirFornecedor(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Excluir esse fornecedor?', 'Essa ação não pode ser desfeita.', async () => {
+            evento.fornecedores = (evento.fornecedores || []).filter(x => x.id !== id);
+            await sincronizarEventoGerenciado(evento.id);
+            eventoGestaoRenderFornecedores();
+        }, 'Excluir');
+    }
+
+    // ---------- EQUIPE & ESCALAÇÃO ----------
+    function eventoGestaoRenderEquipe() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-equipe-lista');
+        if (!evento || !lista) return;
+
+        const itens = evento.equipe || [];
+        if (itens.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Ninguém escalado ainda.</div>';
+            return;
+        }
+
+        lista.innerHTML = itens.map(p => `
+            <div class="usuario-item">
+                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${p.nome.charAt(0).toUpperCase()}</div>
+                <div class="usuario-item-info">
+                    <div class="usuario-item-nome">${p.nome} ${p.funcao ? `<span class="usuario-badge-convite">${p.funcao}</span>` : ''}</div>
+                    <div class="usuario-item-detalhe">${p.horario || 'Horário não definido'}${p.contato ? ' · ' + p.contato : ''}</div>
+                </div>
+                <div class="usuario-item-acoes">
+                    <button class="btn-icon-acao" onclick="abrirModalEquipeItem('${p.id}')" title="Editar">${ICONE_EDITAR}</button>
+                    <button class="btn-icon-acao excluir" onclick="excluirEquipeItem('${p.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                </div>
+            </div>`).join('');
+    }
+
+    function abrirModalEquipeItem(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const p = id ? (evento.equipe || []).find(x => x.id === id) : null;
+
+        document.getElementById('equipe-item-titulo-modal').textContent = p ? 'Editar escalação' : 'Escalar pessoa';
+        document.getElementById('equipe-item-id').value = p ? p.id : '';
+        document.getElementById('equipe-item-nome').value = p ? p.nome : '';
+        document.getElementById('equipe-item-funcao').value = p ? (p.funcao || '') : '';
+        document.getElementById('equipe-item-horario').value = p ? (p.horario || '') : '';
+        document.getElementById('equipe-item-contato').value = p ? (p.contato || '') : '';
+
+        const modal = document.getElementById('modal-equipe-item');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalEquipeItem() {
+        const modal = document.getElementById('modal-equipe-item');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    async function salvarEquipeItem() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.equipe = evento.equipe || [];
+
+        const idExistente = document.getElementById('equipe-item-id').value;
+        const nome = document.getElementById('equipe-item-nome').value.trim();
+        if (!nome) { alert('Informe o nome da pessoa.'); return; }
+
+        const dados = {
+            nome,
+            funcao: document.getElementById('equipe-item-funcao').value.trim(),
+            horario: document.getElementById('equipe-item-horario').value.trim(),
+            contato: document.getElementById('equipe-item-contato').value.trim()
+        };
+
+        if (idExistente) {
+            const p = evento.equipe.find(x => x.id === idExistente);
+            if (p) Object.assign(p, dados);
+        } else {
+            evento.equipe.push({ id: 'equipe_' + Date.now(), ...dados });
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalEquipeItem();
+        eventoGestaoRenderEquipe();
+    }
+
+    async function excluirEquipeItem(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Remover essa pessoa da escalação?', 'Essa ação não pode ser desfeita.', async () => {
+            evento.equipe = (evento.equipe || []).filter(x => x.id !== id);
+            await sincronizarEventoGerenciado(evento.id);
+            eventoGestaoRenderEquipe();
+        }, 'Excluir');
+    }
+
+    // =====================================================
+    //  ENTREGÁVEIS DE PATROCÍNIO — organizados nas 3 fases naturais
+    //  de qualquer ativação: antes, durante e depois do evento.
+    // =====================================================
+    const ENTREGAVEL_ITENS = {
+        preEvento: [
+            { chave: 'redes_sociais', label: 'Divulgação nas redes sociais' },
+            { chave: 'trafego_pago', label: 'Anúncios pagos / campanha de tráfego pago' }
+        ],
+        duranteEvento: [
+            { chave: 'backdrop', label: 'Backdrop com a marca' },
+            { chave: 'banner_bandeira', label: 'Banner ou bandeira no local' },
+            { chave: 'mencao_microfone', label: 'Menção de agradecimento no microfone' },
+            { chave: 'espaco_ativacao', label: 'Espaço próprio pra ativação da marca' }
+        ],
+        posEvento: [
+            { chave: 'video_cobertura', label: 'Logo no vídeo de cobertura do evento' },
+            { chave: 'agradecimento', label: 'Agradecimento formal ao patrocinador' },
+            { chave: 'relatorio_dados', label: 'Relatório com dados do evento' }
+        ]
+    };
+    const ENTREGAVEL_FASE_LABEL = { preEvento: 'Pré-evento', duranteEvento: 'Durante o evento', posEvento: 'Pós-evento' };
+
+    function entregaveisEstruturaVazia() {
+        return {
+            preEvento: { itens: [], outros: '' },
+            duranteEvento: { itens: [], outros: '' },
+            posEvento: { itens: [], outros: '' }
+        };
+    }
+
+    function entregaveisResumoTexto(entregaveis) {
+        if (!entregaveis) return '';
+        const partes = [];
+        ['preEvento', 'duranteEvento', 'posEvento'].forEach(fase => {
+            const bloco = entregaveis[fase];
+            if (!bloco) return;
+            const labels = (bloco.itens || []).map(chave => {
+                const item = ENTREGAVEL_ITENS[fase].find(i => i.chave === chave);
+                return item ? item.label : chave;
+            });
+            if (bloco.outros) labels.push(bloco.outros);
+            if (labels.length) partes.push(ENTREGAVEL_FASE_LABEL[fase] + ': ' + labels.join(', '));
+        });
+        if (entregaveis.legado) partes.push('Obs. antiga: ' + entregaveis.legado);
+        return partes.join(' · ');
+    }
+
     // ---------- PATROCÍNIOS / PARCERIAS ----------
     function eventoGestaoRenderPatrocinios() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const lista = document.getElementById('evento-gestao-patrocinios-lista');
         if (!evento || !lista) return;
 
@@ -15051,58 +15554,8 @@
         if (select.value === 'outro') outro.focus();
     }
 
-    // =====================================================
-    //  ENTREGÁVEIS DE PATROCÍNIO — organizados nas 3 fases naturais
-    //  de qualquer ativação: antes, durante e depois do evento.
-    // =====================================================
-    const ENTREGAVEL_ITENS = {
-        preEvento: [
-            { chave: 'redes_sociais', label: 'Divulgação nas redes sociais' },
-            { chave: 'trafego_pago', label: 'Anúncios pagos / campanha de tráfego pago' }
-        ],
-        duranteEvento: [
-            { chave: 'backdrop', label: 'Backdrop com a marca' },
-            { chave: 'banner_bandeira', label: 'Banner ou bandeira no local' },
-            { chave: 'mencao_microfone', label: 'Menção de agradecimento no microfone' },
-            { chave: 'espaco_ativacao', label: 'Espaço próprio pra ativação da marca' }
-        ],
-        posEvento: [
-            { chave: 'video_cobertura', label: 'Logo no vídeo de cobertura do evento' },
-            { chave: 'agradecimento', label: 'Agradecimento formal ao patrocinador' },
-            { chave: 'relatorio_dados', label: 'Relatório com dados do evento' }
-        ]
-    };
-    const ENTREGAVEL_FASE_LABEL = { preEvento: 'Pré-evento', duranteEvento: 'Durante o evento', posEvento: 'Pós-evento' };
-
-    function entregaveisEstruturaVazia() {
-        return {
-            preEvento: { itens: [], outros: '' },
-            duranteEvento: { itens: [], outros: '' },
-            posEvento: { itens: [], outros: '' }
-        };
-    }
-
-    // Resumo curto pra mostrar na lista de patrocínios, tipo
-    // "Pré-evento: divulgação nas redes · Durante: backdrop, microfone"
-    function entregaveisResumoTexto(entregaveis) {
-        if (!entregaveis) return '';
-        const partes = [];
-        ['preEvento', 'duranteEvento', 'posEvento'].forEach(fase => {
-            const bloco = entregaveis[fase];
-            if (!bloco) return;
-            const labels = (bloco.itens || []).map(chave => {
-                const item = ENTREGAVEL_ITENS[fase].find(i => i.chave === chave);
-                return item ? item.label : chave;
-            });
-            if (bloco.outros) labels.push(bloco.outros);
-            if (labels.length) partes.push(ENTREGAVEL_FASE_LABEL[fase] + ': ' + labels.join(', '));
-        });
-        if (entregaveis.legado) partes.push('Obs. antiga: ' + entregaveis.legado);
-        return partes.join(' · ');
-    }
-
     function abrirModalPatrocinio(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const p = id ? (evento.patrocinios || []).find(x => x.id === id) : null;
 
         document.getElementById('patrocinio-titulo-modal').textContent = p ? 'Editar patrocínio/parceria' : 'Novo patrocínio/parceria';
@@ -15113,8 +15566,6 @@
         document.getElementById('patrocinio-permuta').value = p ? (p.descricaoPermuta || '') : '';
         document.getElementById('patrocinio-status-pagamento').value = p ? p.statusPagamento : 'pendente';
 
-        // Entregáveis: desmarca tudo, limpa os campos "outros", e depois
-        // marca de acordo com o que já estiver salvo (se for edição).
         document.querySelectorAll('.entregavel-check').forEach(chk => { chk.checked = false; });
         ['preEvento', 'duranteEvento', 'posEvento'].forEach(fase => {
             document.getElementById('entregavel-' + fase + '-outros').value = '';
@@ -15153,8 +15604,8 @@
         modal.classList.remove('active');
     }
 
-    function salvarPatrocinio() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+    async function salvarPatrocinio() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
         evento.patrocinios = evento.patrocinios || [];
 
@@ -15195,32 +15646,235 @@
             evento.patrocinios.push({ id: 'patro_' + Date.now(), ...dados });
         }
 
-        salvarEventosStorage();
+        await sincronizarEventoGerenciado(evento.id);
         fecharModalPatrocinio();
         eventoGestaoRenderPatrocinios();
         eventoGestaoRenderResumoFinanceiro();
     }
 
-    function excluirPatrocinio(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+    async function excluirPatrocinio(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        customConfirm('Excluir esse patrocínio/parceria?', 'Essa ação não pode ser desfeita.', () => {
+        customConfirm('Excluir esse patrocínio/parceria?', 'Essa ação não pode ser desfeita.', async () => {
             evento.patrocinios = (evento.patrocinios || []).filter(x => x.id !== id);
-            salvarEventosStorage();
+            await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderPatrocinios();
             eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
     }
 
-    // ---------- FINANCEIRO ----------
+    // ---------- LOTES DE INGRESSO ----------
+    function eventoGestaoRenderLotes() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-lotes-lista');
+        if (!evento || !lista) return;
+
+        const lotes = evento.lotesIngresso || [];
+        if (lotes.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Nenhum lote cadastrado ainda.</div>';
+            return;
+        }
+
+        lista.innerHTML = lotes.map(l => {
+            const vendidos = eventoContarVendidosDoLote(evento, l.id);
+            return `
+                <div class="usuario-item">
+                    <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:12px;">${formatarMoeda(l.precoUnitario).replace('R$ ', '')}</div>
+                    <div class="usuario-item-info">
+                        <div class="usuario-item-nome">${l.nome}</div>
+                        <div class="usuario-item-detalhe">${l.inclui || 'Sem itens inclusos'} · ${vendidos}${l.quantidadeTotal ? ' de ' + l.quantidadeTotal : ''} vendido${vendidos !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="usuario-item-acoes">
+                        <button class="btn-icon-acao" onclick="abrirModalLoteIngresso('${l.id}')" title="Editar">${ICONE_EDITAR}</button>
+                        <button class="btn-icon-acao excluir" onclick="excluirLoteIngresso('${l.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function eventoContarVendidosDoLote(evento, loteId) {
+        const lancamentos = (evento.financeiro && evento.financeiro.lancamentos) || [];
+        return lancamentos.filter(l => l.tipo === 'receita' && l.origem === 'ingresso' && l.loteId === loteId).length;
+    }
+
+    function abrirModalLoteIngresso(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const l = id ? (evento.lotesIngresso || []).find(x => x.id === id) : null;
+
+        document.getElementById('lote-ingresso-titulo-modal').textContent = l ? 'Editar lote' : 'Novo lote de ingresso';
+        document.getElementById('lote-ingresso-id').value = l ? l.id : '';
+        document.getElementById('lote-ingresso-nome').value = l ? l.nome : '';
+        document.getElementById('lote-ingresso-preco').value = l ? String(l.precoUnitario).replace('.', ',') : '';
+        document.getElementById('lote-ingresso-quantidade').value = l ? (l.quantidadeTotal || '') : '';
+        document.getElementById('lote-ingresso-inclui').value = l ? (l.inclui || '') : '';
+
+        const modal = document.getElementById('modal-lote-ingresso');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalLoteIngresso() {
+        const modal = document.getElementById('modal-lote-ingresso');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    async function salvarLoteIngresso() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.lotesIngresso = evento.lotesIngresso || [];
+
+        const idExistente = document.getElementById('lote-ingresso-id').value;
+        const nome = document.getElementById('lote-ingresso-nome').value.trim();
+        const precoTexto = document.getElementById('lote-ingresso-preco').value.trim();
+        const preco = parseFloat(precoTexto.replace(/\./g, '').replace(',', '.'));
+
+        if (!nome || isNaN(preco)) {
+            alert('Nome e preço válido são obrigatórios.');
+            return;
+        }
+
+        const dados = {
+            nome,
+            precoUnitario: Math.abs(preco),
+            quantidadeTotal: parseInt(document.getElementById('lote-ingresso-quantidade').value) || null,
+            inclui: document.getElementById('lote-ingresso-inclui').value.trim()
+        };
+
+        if (idExistente) {
+            const l = evento.lotesIngresso.find(x => x.id === idExistente);
+            if (l) Object.assign(l, dados);
+        } else {
+            evento.lotesIngresso.push({ id: 'lote_' + Date.now(), ...dados });
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalLoteIngresso();
+        eventoGestaoRenderLotes();
+    }
+
+    async function excluirLoteIngresso(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Excluir esse lote?', 'Lançamentos de receita já vinculados a ele continuam existindo, só perdem a referência ao lote.', async () => {
+            evento.lotesIngresso = (evento.lotesIngresso || []).filter(x => x.id !== id);
+            await sincronizarEventoGerenciado(evento.id);
+            eventoGestaoRenderLotes();
+        }, 'Excluir');
+    }
+
+    // ---------- LANÇAMENTOS FINANCEIROS ----------
+    const LANCAMENTO_TIPO_AJUDA = {
+        custo_fixo: 'Vai acontecer independente do resultado do evento (equipe contratada, aluguel de estrutura).',
+        custo_variavel: 'Muda conforme o desempenho do evento (taxa de cartão/Pix sobre venda, item por pessoa).',
+        despesa: 'Algo pontual ou imprevisto (combustível, compra de última hora).',
+        investimento: 'O que você coloca pra fazer o evento acontecer ou crescer (marketing, divulgação paga).',
+        receita: 'O que entra — venda de ingresso, patrocínio, parceria ou outra fonte.'
+    };
     const LANCAMENTO_TIPO_LABEL = {
         custo_fixo: 'Custo fixo', custo_variavel: 'Custo variável',
         despesa: 'Despesa', investimento: 'Investimento', receita: 'Receita'
     };
     const LANCAMENTO_ORIGEM_LABEL = { ingresso: 'Ingresso', faturamento: 'Faturamento do bar', patrocinio: 'Patrocínio', parceria: 'Parceria', outra: 'Outra origem' };
 
+    function lancamentoAtualizarCamposOrigem() {
+        const tipo = document.getElementById('lancamento-tipo').value;
+        document.getElementById('lancamento-tipo-ajuda').textContent = LANCAMENTO_TIPO_AJUDA[tipo] || '';
+
+        const ehReceita = tipo === 'receita';
+        document.getElementById('lancamento-origem-wrap').classList.toggle('hidden', !ehReceita);
+
+        const origem = document.getElementById('lancamento-origem').value;
+        const ehIngresso = ehReceita && origem === 'ingresso';
+        const loteWrap = document.getElementById('lancamento-lote-wrap');
+        loteWrap.classList.toggle('hidden', !ehIngresso);
+
+        if (ehIngresso) {
+            const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+            const lotes = (evento && evento.lotesIngresso) || [];
+            const select = document.getElementById('lancamento-lote');
+            select.innerHTML = lotes.length
+                ? lotes.map(l => `<option value="${l.id}">${l.nome} — ${formatarMoeda(l.precoUnitario)}</option>`).join('')
+                : '<option value="">Nenhum lote cadastrado ainda</option>';
+        }
+    }
+
+    function abrirModalLancamentoFinanceiro(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const l = id ? ((evento.financeiro && evento.financeiro.lancamentos) || []).find(x => x.id === id) : null;
+
+        document.getElementById('lancamento-titulo-modal').textContent = l ? 'Editar lançamento' : 'Novo lançamento';
+        document.getElementById('lancamento-id').value = l ? l.id : '';
+        document.getElementById('lancamento-tipo').value = l ? l.tipo : 'despesa';
+        document.getElementById('lancamento-origem').value = (l && l.origem) ? l.origem : 'ingresso';
+        document.getElementById('lancamento-descricao').value = l ? l.descricao : '';
+        document.getElementById('lancamento-valor').value = l ? String(l.valor).replace('.', ',') : '';
+        document.getElementById('lancamento-data').value = l ? (l.data || '') : new Date().toISOString().slice(0, 10);
+        lancamentoAtualizarCamposOrigem();
+        if (l && l.origem === 'ingresso' && l.loteId) {
+            document.getElementById('lancamento-lote').value = l.loteId;
+        }
+
+        const modal = document.getElementById('modal-lancamento-financeiro');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalLancamentoFinanceiro() {
+        const modal = document.getElementById('modal-lancamento-financeiro');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    async function salvarLancamentoFinanceiro() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+
+        const idExistente = document.getElementById('lancamento-id').value;
+        const descricao = document.getElementById('lancamento-descricao').value.trim();
+        const valorTexto = document.getElementById('lancamento-valor').value.trim();
+        const valor = parseFloat(valorTexto.replace(/\./g, '').replace(',', '.'));
+        const tipo = document.getElementById('lancamento-tipo').value;
+
+        if (!descricao || isNaN(valor)) {
+            alert('Descrição e valor válido são obrigatórios.');
+            return;
+        }
+
+        const dadosLancamento = {
+            tipo,
+            descricao,
+            valor: Math.abs(valor),
+            data: document.getElementById('lancamento-data').value
+        };
+
+        if (tipo === 'receita') {
+            dadosLancamento.origem = document.getElementById('lancamento-origem').value;
+            if (dadosLancamento.origem === 'ingresso') {
+                dadosLancamento.loteId = document.getElementById('lancamento-lote').value || null;
+            }
+        }
+
+        if (idExistente) {
+            const l = evento.financeiro.lancamentos.find(x => x.id === idExistente);
+            if (l) {
+                delete l.origem;
+                delete l.loteId;
+                Object.assign(l, dadosLancamento);
+            }
+        } else {
+            evento.financeiro.lancamentos.push({ id: 'lanc_' + Date.now(), ...dadosLancamento });
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalLancamentoFinanceiro();
+        eventoGestaoRenderFinanceiro();
+        eventoGestaoRenderResumoFinanceiro();
+    }
+
     function eventoGestaoRenderFinanceiro() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const dre = document.getElementById('evento-gestao-financeiro-dre');
         if (!evento) return;
 
@@ -15249,8 +15903,6 @@
                 <span>Lucro líquido: <strong style="color:${lucro >= 0 ? '#86EFAC' : '#FCA5A5'}; font-size:16px;">${formatarMoeda(lucro)}</strong></span>`;
         }
 
-        // Cada categoria vira sua própria seção — nada de misturar receita
-        // com custo fixo com custo variável na mesma lista.
         const categorias = [
             { tipo: 'receita', containerId: 'evento-gestao-financeiro-receita' },
             { tipo: 'custo_fixo', containerId: 'evento-gestao-financeiro-custo_fixo' },
@@ -15296,512 +15948,25 @@
         });
     }
 
-    const LANCAMENTO_TIPO_AJUDA = {
-        custo_fixo: 'Vai acontecer independente do resultado do evento (equipe contratada, aluguel de estrutura).',
-        custo_variavel: 'Muda conforme o desempenho do evento (taxa de cartão/Pix sobre venda, item por pessoa).',
-        despesa: 'Algo pontual ou imprevisto (combustível, compra de última hora).',
-        investimento: 'O que você coloca pra fazer o evento acontecer ou crescer (marketing, divulgação paga).',
-        receita: 'O que entra — venda de ingresso, patrocínio, parceria ou outra fonte.'
-    };
-
-    function lancamentoAtualizarCamposOrigem() {
-        const tipo = document.getElementById('lancamento-tipo').value;
-        document.getElementById('lancamento-tipo-ajuda').textContent = LANCAMENTO_TIPO_AJUDA[tipo] || '';
-
-        const ehReceita = tipo === 'receita';
-        document.getElementById('lancamento-origem-wrap').classList.toggle('hidden', !ehReceita);
-
-        const origem = document.getElementById('lancamento-origem').value;
-        const ehIngresso = ehReceita && origem === 'ingresso';
-        const loteWrap = document.getElementById('lancamento-lote-wrap');
-        loteWrap.classList.toggle('hidden', !ehIngresso);
-
-        if (ehIngresso) {
-            const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-            const lotes = (evento && evento.lotesIngresso) || [];
-            const select = document.getElementById('lancamento-lote');
-            select.innerHTML = lotes.length
-                ? lotes.map(l => `<option value="${l.id}">${l.nome} — ${formatarMoeda(l.precoUnitario)}</option>`).join('')
-                : '<option value="">Nenhum lote cadastrado ainda</option>';
-        }
-    }
-
-    function abrirModalLancamentoFinanceiro(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const l = id ? ((evento.financeiro && evento.financeiro.lancamentos) || []).find(x => x.id === id) : null;
-
-        document.getElementById('lancamento-titulo-modal').textContent = l ? 'Editar lançamento' : 'Novo lançamento';
-        document.getElementById('lancamento-id').value = l ? l.id : '';
-        document.getElementById('lancamento-tipo').value = l ? l.tipo : 'despesa';
-        document.getElementById('lancamento-origem').value = (l && l.origem) ? l.origem : 'ingresso';
-        document.getElementById('lancamento-descricao').value = l ? l.descricao : '';
-        document.getElementById('lancamento-valor').value = l ? String(l.valor).replace('.', ',') : '';
-        document.getElementById('lancamento-data').value = l ? (l.data || '') : new Date().toISOString().slice(0, 10);
-        lancamentoAtualizarCamposOrigem();
-        if (l && l.origem === 'ingresso' && l.loteId) {
-            document.getElementById('lancamento-lote').value = l.loteId;
-        }
-
-        const modal = document.getElementById('modal-lancamento-financeiro');
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-    }
-
-    function fecharModalLancamentoFinanceiro() {
-        const modal = document.getElementById('modal-lancamento-financeiro');
-        modal.classList.add('hidden');
-        modal.classList.remove('active');
-    }
-
-    function salvarLancamentoFinanceiro() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+    async function excluirLancamentoFinanceiro(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        evento.financeiro = evento.financeiro || { lancamentos: [] };
-
-        const idExistente = document.getElementById('lancamento-id').value;
-        const descricao = document.getElementById('lancamento-descricao').value.trim();
-        const valorTexto = document.getElementById('lancamento-valor').value.trim();
-        const valor = parseFloat(valorTexto.replace(/\./g, '').replace(',', '.'));
-        const tipo = document.getElementById('lancamento-tipo').value;
-
-        if (!descricao || isNaN(valor)) {
-            alert('Descrição e valor válido são obrigatórios.');
-            return;
-        }
-
-        const dados = {
-            tipo,
-            descricao,
-            valor: Math.abs(valor),
-            data: document.getElementById('lancamento-data').value,
-            origem: undefined,
-            loteId: undefined
-        };
-
-        if (tipo === 'receita') {
-            dados.origem = document.getElementById('lancamento-origem').value;
-            if (dados.origem === 'ingresso') {
-                dados.loteId = document.getElementById('lancamento-lote').value || null;
-            }
-        }
-
-        if (idExistente) {
-            const l = evento.financeiro.lancamentos.find(x => x.id === idExistente);
-            if (l) {
-                delete l.origem;
-                delete l.loteId;
-                Object.assign(l, dados);
-            }
-        } else {
-            evento.financeiro.lancamentos.push({ id: 'lanc_' + Date.now(), ...dados });
-        }
-
-        salvarEventosStorage();
-        fecharModalLancamentoFinanceiro();
-        eventoGestaoRenderFinanceiro();
-        eventoGestaoRenderResumoFinanceiro();
-        eventosGerenciadosRender();
-    }
-
-    function excluirLancamentoFinanceiro(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        customConfirm('Excluir esse lançamento?', 'Essa ação não pode ser desfeita.', () => {
+        customConfirm('Excluir esse lançamento?', 'Essa ação não pode ser desfeita.', async () => {
             evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(l => l.id !== id);
-            salvarEventosStorage();
+            await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderFinanceiro();
             eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
     }
 
-    // ---------- CHECKLIST DE PRODUÇÃO ----------
-    function eventoGestaoRenderChecklist() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const lista = document.getElementById('evento-gestao-checklist-lista');
-        if (!evento || !lista) return;
-
-        const itens = evento.checklist || [];
-        if (itens.length === 0) {
-            lista.innerHTML = '<div class="bandas-vazio">Nenhum item no checklist ainda.</div>';
-            return;
-        }
-
-        const ordenados = itens.slice().sort((a, b) => (a.status === 'feito') - (b.status === 'feito'));
-
-        lista.innerHTML = ordenados.map(item => `
-            <div class="usuario-item">
-                <button class="btn-icon-acao ${item.status === 'feito' ? 'ativa' : ''}" onclick="alternarStatusChecklist('${item.id}')" title="${item.status === 'feito' ? 'Marcar como pendente' : 'Marcar como feito'}" style="${item.status === 'feito' ? 'background:#DCFCE7; color:#166534;' : ''}">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                </button>
-                <div class="usuario-item-info">
-                    <div class="usuario-item-nome" style="${item.status === 'feito' ? 'text-decoration:line-through; color:var(--warm-gray);' : ''}">${item.titulo}</div>
-                    <div class="usuario-item-detalhe">${item.responsavel ? 'Responsável: ' + item.responsavel : 'Sem responsável definido'}${item.prazo ? ' · Prazo: ' + new Date(item.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
-                </div>
-                <div class="usuario-item-acoes">
-                    <button class="btn-icon-acao" onclick="abrirModalChecklistItem('${item.id}')" title="Editar">${ICONE_EDITAR}</button>
-                    <button class="btn-icon-acao excluir" onclick="excluirChecklistItem('${item.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
-                </div>
-            </div>`).join('');
-    }
-
-    function alternarStatusChecklist(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const item = (evento.checklist || []).find(i => i.id === id);
-        if (!item) return;
-        item.status = item.status === 'feito' ? 'pendente' : 'feito';
-        salvarEventosStorage();
-        eventoGestaoRenderChecklist();
-    }
-
-    function abrirModalChecklistItem(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const item = id ? (evento.checklist || []).find(i => i.id === id) : null;
-
-        document.getElementById('checklist-item-titulo-modal').textContent = item ? 'Editar item do checklist' : 'Novo item do checklist';
-        document.getElementById('checklist-item-id').value = item ? item.id : '';
-        document.getElementById('checklist-item-titulo').value = item ? item.titulo : '';
-        document.getElementById('checklist-item-responsavel').value = item ? (item.responsavel || '') : '';
-        document.getElementById('checklist-item-prazo').value = item ? (item.prazo || '') : '';
-        document.getElementById('checklist-item-status').value = item ? item.status : 'pendente';
-
-        const modal = document.getElementById('modal-checklist-item');
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-    }
-
-    function fecharModalChecklistItem() {
-        const modal = document.getElementById('modal-checklist-item');
-        modal.classList.add('hidden');
-        modal.classList.remove('active');
-    }
-
-    function salvarChecklistItem() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        evento.checklist = evento.checklist || [];
-
-        const idExistente = document.getElementById('checklist-item-id').value;
-        const titulo = document.getElementById('checklist-item-titulo').value.trim();
-        if (!titulo) { alert('Descreva o que precisa ser feito.'); return; }
-
-        const dados = {
-            titulo,
-            responsavel: document.getElementById('checklist-item-responsavel').value.trim(),
-            prazo: document.getElementById('checklist-item-prazo').value,
-            status: document.getElementById('checklist-item-status').value
-        };
-
-        if (idExistente) {
-            const item = evento.checklist.find(i => i.id === idExistente);
-            if (item) Object.assign(item, dados);
-        } else {
-            evento.checklist.push({ id: 'check_' + Date.now(), ...dados });
-        }
-
-        salvarEventosStorage();
-        fecharModalChecklistItem();
-        eventoGestaoRenderChecklist();
-    }
-
-    function excluirChecklistItem(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        customConfirm('Excluir esse item do checklist?', 'Essa ação não pode ser desfeita.', () => {
-            evento.checklist = (evento.checklist || []).filter(i => i.id !== id);
-            salvarEventosStorage();
-            eventoGestaoRenderChecklist();
-        }, 'Excluir');
-    }
-
-    // ---------- FORNECEDORES ----------
-    function eventoGestaoRenderFornecedores() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const lista = document.getElementById('evento-gestao-fornecedores-lista');
-        if (!evento || !lista) return;
-
-        const itens = evento.fornecedores || [];
-        if (itens.length === 0) {
-            lista.innerHTML = '<div class="bandas-vazio">Nenhum fornecedor cadastrado ainda.</div>';
-            return;
-        }
-
-        const corStatus = { pendente: '#92400E', parcial: '#1D4ED8', pago: '#166534' };
-        const labelStatus = { pendente: 'Pendente', parcial: 'Parcial', pago: 'Pago' };
-
-        lista.innerHTML = itens.map(f => `
-            <div class="usuario-item">
-                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${f.nome.charAt(0).toUpperCase()}</div>
-                <div class="usuario-item-info">
-                    <div class="usuario-item-nome">${f.nome}</div>
-                    <div class="usuario-item-detalhe">${f.servico || '—'}${f.contato ? ' · ' + f.contato : ''}${f.valor ? ' · ' + f.valor : ''}</div>
-                </div>
-                <span class="cliente-item-idade-badge" style="background:${corStatus[f.statusPagamento]}20; color:${corStatus[f.statusPagamento]};">${labelStatus[f.statusPagamento]}</span>
-                <div class="usuario-item-acoes">
-                    <button class="btn-icon-acao" onclick="abrirModalFornecedor('${f.id}')" title="Editar">${ICONE_EDITAR}</button>
-                    <button class="btn-icon-acao excluir" onclick="excluirFornecedor('${f.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
-                </div>
-            </div>`).join('');
-    }
-
-    function abrirModalFornecedor(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const f = id ? (evento.fornecedores || []).find(x => x.id === id) : null;
-
-        document.getElementById('fornecedor-titulo-modal').textContent = f ? 'Editar fornecedor' : 'Novo fornecedor';
-        document.getElementById('fornecedor-id').value = f ? f.id : '';
-        document.getElementById('fornecedor-nome').value = f ? f.nome : '';
-        document.getElementById('fornecedor-servico').value = f ? (f.servico || '') : '';
-        document.getElementById('fornecedor-contato').value = f ? (f.contato || '') : '';
-        document.getElementById('fornecedor-valor').value = f ? (f.valor || '') : '';
-        document.getElementById('fornecedor-status-pagamento').value = f ? f.statusPagamento : 'pendente';
-
-        const modal = document.getElementById('modal-fornecedor');
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-    }
-
-    function fecharModalFornecedor() {
-        const modal = document.getElementById('modal-fornecedor');
-        modal.classList.add('hidden');
-        modal.classList.remove('active');
-    }
-
-    function salvarFornecedor() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        evento.fornecedores = evento.fornecedores || [];
-
-        const idExistente = document.getElementById('fornecedor-id').value;
-        const nome = document.getElementById('fornecedor-nome').value.trim();
-        if (!nome) { alert('Informe o nome do fornecedor.'); return; }
-
-        const dados = {
-            nome,
-            servico: document.getElementById('fornecedor-servico').value.trim(),
-            contato: document.getElementById('fornecedor-contato').value.trim(),
-            valor: document.getElementById('fornecedor-valor').value.trim(),
-            statusPagamento: document.getElementById('fornecedor-status-pagamento').value
-        };
-
-        if (idExistente) {
-            const f = evento.fornecedores.find(x => x.id === idExistente);
-            if (f) Object.assign(f, dados);
-        } else {
-            evento.fornecedores.push({ id: 'forn_' + Date.now(), ...dados });
-        }
-
-        salvarEventosStorage();
-        fecharModalFornecedor();
-        eventoGestaoRenderFornecedores();
-    }
-
-    function excluirFornecedor(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        customConfirm('Excluir esse fornecedor?', 'Essa ação não pode ser desfeita.', () => {
-            evento.fornecedores = (evento.fornecedores || []).filter(x => x.id !== id);
-            salvarEventosStorage();
-            eventoGestaoRenderFornecedores();
-        }, 'Excluir');
-    }
-
-    // ---------- EQUIPE & ESCALAÇÃO ----------
-    function eventoGestaoRenderEquipe() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const lista = document.getElementById('evento-gestao-equipe-lista');
-        if (!evento || !lista) return;
-
-        const itens = evento.equipe || [];
-        if (itens.length === 0) {
-            lista.innerHTML = '<div class="bandas-vazio">Ninguém escalado ainda.</div>';
-            return;
-        }
-
-        lista.innerHTML = itens.map(p => `
-            <div class="usuario-item">
-                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${p.nome.charAt(0).toUpperCase()}</div>
-                <div class="usuario-item-info">
-                    <div class="usuario-item-nome">${p.nome} ${p.funcao ? `<span class="usuario-badge-convite">${p.funcao}</span>` : ''}</div>
-                    <div class="usuario-item-detalhe">${p.horario || 'Horário não definido'}${p.contato ? ' · ' + p.contato : ''}</div>
-                </div>
-                <div class="usuario-item-acoes">
-                    <button class="btn-icon-acao" onclick="abrirModalEquipeItem('${p.id}')" title="Editar">${ICONE_EDITAR}</button>
-                    <button class="btn-icon-acao excluir" onclick="excluirEquipeItem('${p.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
-                </div>
-            </div>`).join('');
-    }
-
-    function abrirModalEquipeItem(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const p = id ? (evento.equipe || []).find(x => x.id === id) : null;
-
-        document.getElementById('equipe-item-titulo-modal').textContent = p ? 'Editar escalação' : 'Escalar pessoa';
-        document.getElementById('equipe-item-id').value = p ? p.id : '';
-        document.getElementById('equipe-item-nome').value = p ? p.nome : '';
-        document.getElementById('equipe-item-funcao').value = p ? (p.funcao || '') : '';
-        document.getElementById('equipe-item-horario').value = p ? (p.horario || '') : '';
-        document.getElementById('equipe-item-contato').value = p ? (p.contato || '') : '';
-
-        const modal = document.getElementById('modal-equipe-item');
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-    }
-
-    function fecharModalEquipeItem() {
-        const modal = document.getElementById('modal-equipe-item');
-        modal.classList.add('hidden');
-        modal.classList.remove('active');
-    }
-
-    function salvarEquipeItem() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        evento.equipe = evento.equipe || [];
-
-        const idExistente = document.getElementById('equipe-item-id').value;
-        const nome = document.getElementById('equipe-item-nome').value.trim();
-        if (!nome) { alert('Informe o nome da pessoa.'); return; }
-
-        const dados = {
-            nome,
-            funcao: document.getElementById('equipe-item-funcao').value.trim(),
-            horario: document.getElementById('equipe-item-horario').value.trim(),
-            contato: document.getElementById('equipe-item-contato').value.trim()
-        };
-
-        if (idExistente) {
-            const p = evento.equipe.find(x => x.id === idExistente);
-            if (p) Object.assign(p, dados);
-        } else {
-            evento.equipe.push({ id: 'equipe_' + Date.now(), ...dados });
-        }
-
-        salvarEventosStorage();
-        fecharModalEquipeItem();
-        eventoGestaoRenderEquipe();
-    }
-
-    function excluirEquipeItem(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        customConfirm('Remover essa pessoa da escalação?', 'Essa ação não pode ser desfeita.', () => {
-            evento.equipe = (evento.equipe || []).filter(x => x.id !== id);
-            salvarEventosStorage();
-            eventoGestaoRenderEquipe();
-        }, 'Excluir');
-    }
-
-    // ---------- LOTES DE INGRESSO ----------
-    function eventoGestaoRenderLotes() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const lista = document.getElementById('evento-gestao-lotes-lista');
-        if (!evento || !lista) return;
-
-        const lotes = evento.lotesIngresso || [];
-        if (lotes.length === 0) {
-            lista.innerHTML = '<div class="bandas-vazio">Nenhum lote cadastrado ainda.</div>';
-            return;
-        }
-
-        lista.innerHTML = lotes.map(l => {
-            const vendidos = eventoContarVendidosDoLote(evento, l.id);
-            return `
-                <div class="usuario-item">
-                    <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:12px;">${formatarMoeda(l.precoUnitario).replace('R$ ', '')}</div>
-                    <div class="usuario-item-info">
-                        <div class="usuario-item-nome">${l.nome}</div>
-                        <div class="usuario-item-detalhe">${l.inclui || 'Sem itens inclusos'} · ${vendidos}${l.quantidadeTotal ? ' de ' + l.quantidadeTotal : ''} vendido${vendidos !== 1 ? 's' : ''}</div>
-                    </div>
-                    <div class="usuario-item-acoes">
-                        <button class="btn-icon-acao" onclick="abrirModalLoteIngresso('${l.id}')" title="Editar">${ICONE_EDITAR}</button>
-                        <button class="btn-icon-acao excluir" onclick="excluirLoteIngresso('${l.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
-                    </div>
-                </div>`;
-        }).join('');
-    }
-
-    // Conta quantos ingressos desse lote já foram registrados como venda
-    // (via lançamentos de receita com origem "ingresso" vinculados a ele).
-    // Cada lançamento é 1 registro de venda — pra registrar várias unidades
-    // de uma vez, é só colocar o valor total daquela leva no lançamento.
-    function eventoContarVendidosDoLote(evento, loteId) {
-        const lancamentos = (evento.financeiro && evento.financeiro.lancamentos) || [];
-        return lancamentos.filter(l => l.tipo === 'receita' && l.origem === 'ingresso' && l.loteId === loteId).length;
-    }
-
-    function abrirModalLoteIngresso(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        const l = id ? (evento.lotesIngresso || []).find(x => x.id === id) : null;
-
-        document.getElementById('lote-ingresso-titulo-modal').textContent = l ? 'Editar lote' : 'Novo lote de ingresso';
-        document.getElementById('lote-ingresso-id').value = l ? l.id : '';
-        document.getElementById('lote-ingresso-nome').value = l ? l.nome : '';
-        document.getElementById('lote-ingresso-preco').value = l ? String(l.precoUnitario).replace('.', ',') : '';
-        document.getElementById('lote-ingresso-quantidade').value = l ? (l.quantidadeTotal || '') : '';
-        document.getElementById('lote-ingresso-inclui').value = l ? (l.inclui || '') : '';
-
-        const modal = document.getElementById('modal-lote-ingresso');
-        modal.classList.remove('hidden');
-        modal.classList.add('active');
-    }
-
-    function fecharModalLoteIngresso() {
-        const modal = document.getElementById('modal-lote-ingresso');
-        modal.classList.add('hidden');
-        modal.classList.remove('active');
-    }
-
-    function salvarLoteIngresso() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        evento.lotesIngresso = evento.lotesIngresso || [];
-
-        const idExistente = document.getElementById('lote-ingresso-id').value;
-        const nome = document.getElementById('lote-ingresso-nome').value.trim();
-        const precoTexto = document.getElementById('lote-ingresso-preco').value.trim();
-        const preco = parseFloat(precoTexto.replace(/\./g, '').replace(',', '.'));
-
-        if (!nome || isNaN(preco)) {
-            alert('Nome e preço válido são obrigatórios.');
-            return;
-        }
-
-        const dados = {
-            nome,
-            precoUnitario: Math.abs(preco),
-            quantidadeTotal: parseInt(document.getElementById('lote-ingresso-quantidade').value) || null,
-            inclui: document.getElementById('lote-ingresso-inclui').value.trim()
-        };
-
-        if (idExistente) {
-            const l = evento.lotesIngresso.find(x => x.id === idExistente);
-            if (l) Object.assign(l, dados);
-        } else {
-            evento.lotesIngresso.push({ id: 'lote_' + Date.now(), ...dados });
-        }
-
-        salvarEventosStorage();
-        fecharModalLoteIngresso();
-        eventoGestaoRenderLotes();
-    }
-
-    function excluirLoteIngresso(id) {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
-        if (!evento) return;
-        customConfirm('Excluir esse lote?', 'Lançamentos de receita já vinculados a ele continuam existindo, só perdem a referência ao lote.', () => {
-            evento.lotesIngresso = (evento.lotesIngresso || []).filter(x => x.id !== id);
-            salvarEventosStorage();
-            eventoGestaoRenderLotes();
-        }, 'Excluir');
-    }
-
     function abrirQuadroDoEventoGerenciado() {
-        const evento = eventos.find(e => e.id === eventoGestaoAtualId);
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento || !evento.quadroKanbanId) return;
         kanbanQuadroAtual = evento.quadroKanbanId;
         changePage('marketing', document.getElementById('menu-item-marketing'));
         marketingTrocarView('kanban', document.querySelector('.marketing-tab[data-view="kanban"]'));
     }
+
 
     // Estado da agenda
     let agendaDataRef = new Date(); // data de referência para navegação
@@ -20902,8 +21067,8 @@
         if (!temPermissao('verEventos')) { wrap.classList.add('hidden'); return; }
 
         const hojeStr = new Date().toISOString().split('T')[0];
-        const proximos = eventos
-            .filter(e => e.gestaoCompletaAtiva && e.data >= hojeStr)
+        const proximos = eventosGerenciados
+            .filter(e => e.data >= hojeStr)
             .sort((a, b) => a.data.localeCompare(b.data))
             .slice(0, 4);
 
@@ -20935,11 +21100,18 @@
         dashboardRenderRelatorio(m);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
         const ehRotaEditarBanda = !ehRotaCadastroBanda && !ehRotaConviteUsuario && verificarRotaEditarBanda();
         if (ehRotaCadastroBanda || ehRotaConviteUsuario || ehRotaEditarBanda) return; // não precisa inicializar o painel interno
+
+        // Gestão de Eventos depende do Supabase — testa a conexão ANTES
+        // de mostrar qualquer coisa. Sem conexão, mostra erro e para aqui.
+        const conectado = await testarConexaoSupabase();
+        if (!conectado) return;
+        await carregarEventosGerenciadosDoSupabase();
+        iniciarRealtimeEventosGerenciados();
 
         carregarDatasEspeciaisPersonalizadas();
         carregarEquipamentosCasa();
