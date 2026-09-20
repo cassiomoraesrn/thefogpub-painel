@@ -11814,7 +11814,7 @@
             await sincronizarBanda(item.chaveOriginal);
         } else if (item.tipo === 'cliente') {
             clientes.push(item.dados);
-            salvarClientesStorage();
+            await sincronizarCliente(item.dados.id);
         } else if (item.tipo === 'usuario') {
             usuariosSistema.push(item.dados);
             await sincronizarUsuario(item.dados.id);
@@ -12006,7 +12006,7 @@
         modal.classList.remove('active');
     }
 
-    function salvarCliente() {
+    async function salvarCliente() {
         const idExistente = document.getElementById('cliente-form-id').value;
         const nome = document.getElementById('cliente-form-nome').value.trim();
         const whatsapp = document.getElementById('cliente-form-whatsapp').value.trim();
@@ -12036,14 +12036,16 @@
             observacoes: document.getElementById('cliente-form-observacoes').value.trim()
         };
 
+        let idParaSincronizar = idExistente;
         if (idExistente) {
             const c = clientes.find(x => x.id === idExistente);
             if (c) Object.assign(c, dados);
         } else {
-            clientes.push({ id: 'cliente_' + Date.now(), ...dados, origem: 'manual', criadoEm: new Date().toISOString() });
+            idParaSincronizar = 'cliente_' + Date.now();
+            clientes.push({ id: idParaSincronizar, ...dados, origem: 'manual', criadoEm: new Date().toISOString() });
         }
 
-        salvarClientesStorage();
+        await sincronizarCliente(idParaSincronizar);
         fecharModalCliente();
         clientesRenderLista();
         if (idExistente && document.getElementById('cliente-perfil-page') && !document.getElementById('cliente-perfil-page').classList.contains('hidden')) {
@@ -12089,10 +12091,10 @@
     function excluirClienteAtual() {
         const c = clientes.find(x => x.id === clienteAtualId);
         if (!c) return;
-        customConfirm('Excluir cliente?', `${c.nome} vai pra lixeira e pode ser restaurado por até 10 dias.`, () => {
+        customConfirm('Excluir cliente?', `${c.nome} vai pra lixeira e pode ser restaurado por até 10 dias.`, async () => {
             moverParaLixeira('cliente', c.nome, c);
             clientes = clientes.filter(x => x.id !== clienteAtualId);
-            salvarClientesStorage();
+            await excluirClienteSupabase(c.id);
             changePage('clientes', document.getElementById('menu-item-clientes'));
         }, 'Excluir');
     }
@@ -12256,7 +12258,7 @@
         return null; // não conseguimos reconhecer o formato — melhor deixar em branco que errar
     }
 
-    function confirmarImportacaoClientes() {
+    async function confirmarImportacaoClientes() {
         const selects = document.querySelectorAll('#importar-mapeamento-linhas select');
         const mapeamento = {}; // { idxColuna: chaveCampo }
         selects.forEach(sel => {
@@ -12271,6 +12273,7 @@
         }
 
         let importados = 0, atualizados = 0, comErro = 0;
+        const idsAfetados = [];
 
         importarClientesLinhas.forEach((linha, i) => {
             const linhaTipada = importarClientesLinhasTipadas[i] || [];
@@ -12298,21 +12301,26 @@
                     instagram: registro.instagram || existente.instagram,
                     observacoes: registro.observacoes || existente.observacoes
                 });
+                idsAfetados.push(existente.id);
                 atualizados++;
             } else {
+                const novoId = 'cliente_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
                 clientes.push({
-                    id: 'cliente_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                    id: novoId,
                     nome: registro.nome, whatsapp: registro.whatsapp,
                     email: registro.email || '', dataNascimento: registro.dataNascimento || null,
                     genero: registro.genero || '', instagram: registro.instagram || '',
                     observacoes: registro.observacoes || '',
                     origem: 'importado', criadoEm: new Date().toISOString()
                 });
+                idsAfetados.push(novoId);
                 importados++;
             }
         });
 
-        salvarClientesStorage();
+        // Envia tudo de uma vez só (upsert em lote), em vez de uma chamada
+        // por cliente — bem mais rápido pra planilhas com muitas linhas.
+        await sincronizarClientesEmLote(idsAfetados);
 
         document.getElementById('importar-etapa-mapeamento').classList.add('hidden');
         document.getElementById('importar-etapa-resumo').classList.remove('hidden');
@@ -15139,6 +15147,92 @@
         });
         canal.subscribe((status, err) => {
             console.log('Realtime (bandas): status da inscrição:', status, err || '');
+        });
+    }
+
+    // =====================================================
+    //  CLIENTES — mesmo padrão dos demais módulos. Estrutura simples
+    //  (array plano), então cada cliente vira uma linha de verdade na
+    //  tabela (sem precisar de bloco JSON como fizemos em Bandas).
+    // =====================================================
+    function clienteParaLinhaSupabase(c) {
+        return {
+            id: c.id, nome: c.nome, whatsapp: c.whatsapp || '', email: c.email || '',
+            data_nascimento: c.dataNascimento || null, genero: c.genero || '',
+            instagram: c.instagram || '', observacoes: c.observacoes || '',
+            origem: c.origem, criado_em: c.criadoEm || new Date().toISOString()
+        };
+    }
+
+    async function carregarClientesDoSupabase() {
+        const { data, error } = await supabaseClient.from('clientes').select('*');
+        if (error) { mostrarErroConexaoSupabase(); return false; }
+
+        if (data.length === 0 && clientes.length > 0) {
+            await sincronizarClientesEmLote(clientes.map(c => c.id));
+        } else {
+            clientes = data.map(row => ({
+                id: row.id, nome: row.nome, whatsapp: row.whatsapp || '', email: row.email || '',
+                dataNascimento: row.data_nascimento || '', genero: row.genero || '',
+                instagram: row.instagram || '', observacoes: row.observacoes || '',
+                origem: row.origem, criadoEm: row.criado_em
+            }));
+        }
+        return true;
+    }
+
+    async function sincronizarCliente(clienteId) {
+        const c = clientes.find(x => x.id === clienteId);
+        if (!c || !supabaseClient) return;
+        await supabaseClient.from('clientes').upsert(clienteParaLinhaSupabase(c));
+    }
+
+    // Envia vários clientes de uma vez (usado na importação de planilha e
+    // na primeira semeadura do banco) — uma chamada só, em vez de uma por
+    // cliente.
+    async function sincronizarClientesEmLote(idsClientes) {
+        if (!supabaseClient || idsClientes.length === 0) return;
+        const linhas = idsClientes
+            .map(id => clientes.find(c => c.id === id))
+            .filter(Boolean)
+            .map(clienteParaLinhaSupabase);
+        if (linhas.length === 0) return;
+        await supabaseClient.from('clientes').upsert(linhas);
+    }
+
+    async function excluirClienteSupabase(clienteId) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('clientes').delete().eq('id', clienteId);
+    }
+
+    let recarregandoClientes = false;
+    async function recarregarClientesERerenderizar() {
+        if (recarregandoClientes) return;
+        recarregandoClientes = true;
+        const ok = await carregarClientesDoSupabase();
+        recarregandoClientes = false;
+        if (!ok) return;
+
+        clientesRenderLista();
+
+        const paginaPerfilAberta = document.getElementById('cliente-perfil-page') && !document.getElementById('cliente-perfil-page').classList.contains('hidden');
+        if (paginaPerfilAberta && clienteAtualId) {
+            if (clientes.find(c => c.id === clienteAtualId)) {
+                showClientePerfil(clienteAtualId);
+            } else {
+                changePage('clientes', document.getElementById('menu-item-clientes'));
+            }
+        }
+    }
+
+    function iniciarRealtimeClientes() {
+        if (!supabaseClient) return;
+        const canal = supabaseClient.channel('clientes-realtime');
+        canal.on('postgres_changes', { event: '*', schema: 'public', table: 'clientes' }, () => {
+            recarregarClientesERerenderizar();
+        });
+        canal.subscribe((status, err) => {
+            console.log('Realtime (clientes): status da inscrição:', status, err || '');
         });
     }
 
@@ -21333,9 +21427,11 @@
         await carregarEventosGerenciadosDoSupabase();
         await carregarUsuariosEFuncoesDoSupabase();
         await carregarBandasDoSupabase();
+        await carregarClientesDoSupabase();
         iniciarRealtimeEventosGerenciados();
         iniciarRealtimeUsuariosEFuncoes();
         iniciarRealtimeBandas();
+        iniciarRealtimeClientes();
 
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
