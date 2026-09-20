@@ -14927,11 +14927,14 @@
         const tabelas = ['eventos', 'programacao_itens', 'checklist_itens', 'fornecedores', 'equipe_itens', 'patrocinios', 'lotes_ingresso', 'lancamentos_financeiros'];
         const canal = supabaseClient.channel('eventos-realtime');
         tabelas.forEach(tabela => {
-            canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela }, () => {
+            canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela }, (payload) => {
+                console.log('Realtime: mudança recebida em', tabela, payload);
                 recarregarEventosGerenciadosERerenderizar();
             });
         });
-        canal.subscribe();
+        canal.subscribe((status, err) => {
+            console.log('Realtime: status da inscrição:', status, err || '');
+        });
     }
 
     function eventoNomeExibicao(evento) {
