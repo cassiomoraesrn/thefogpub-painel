@@ -7132,6 +7132,127 @@
         /* ==============================
            MARKETING — SUB-NAVEGAÇÃO (TABS)
            ============================== */
+        /* =====================================================
+           SIDEBAR SECUNDÁRIA — usada dentro da Gestão de Eventos pra
+           navegar entre as áreas do evento (Programação, Financeiro
+           com suas sub-categorias, etc.) sem competir por espaço com
+           a sidebar principal do sistema.
+           ===================================================== */
+        .evento-gestao-layout {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+
+        .evento-gestao-sidebar {
+            width: 224px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background: var(--beige);
+            border-radius: 12px;
+            padding: 12px;
+            transition: width 0.2s ease;
+        }
+
+        .evento-gestao-sidebar.recolhida {
+            width: 52px;
+            padding: 12px 8px;
+        }
+
+        .evento-gestao-sidebar-toggle {
+            align-self: flex-end;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--warm-gray);
+            padding: 6px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+        }
+        .evento-gestao-sidebar-toggle:hover { background: rgba(0,0,0,0.06); }
+        .evento-gestao-sidebar-toggle svg { transition: transform 0.2s ease; display: block; }
+        .evento-gestao-sidebar.recolhida .evento-gestao-sidebar-toggle svg { transform: rotate(180deg); }
+
+        .evento-gestao-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 500;
+            color: var(--black);
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+        }
+        .evento-gestao-nav-item svg { flex-shrink: 0; }
+        .evento-gestao-nav-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .evento-gestao-nav-item:hover { background: rgba(0,0,0,0.06); }
+        .evento-gestao-nav-item.active { background: var(--green-dark); color: #fff; }
+
+        .evento-gestao-nav-grupo-titulo { justify-content: space-between; }
+        .evento-gestao-nav-grupo-titulo span:first-of-type { flex: 1; }
+        .evento-gestao-chevron { transition: transform 0.15s ease; flex-shrink: 0; }
+        .evento-gestao-nav-grupo.aberto .evento-gestao-chevron { transform: rotate(180deg); }
+
+        .evento-gestao-nav-subitens {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease;
+            padding-left: 26px;
+        }
+        .evento-gestao-nav-grupo.aberto .evento-gestao-nav-subitens { max-height: 320px; }
+
+        .evento-gestao-nav-subitem {
+            padding: 8px 10px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--warm-gray);
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+        }
+        .evento-gestao-nav-subitem:hover { background: rgba(0,0,0,0.06); color: var(--black); }
+        .evento-gestao-nav-subitem.active { background: var(--brown); color: #fff; font-weight: 600; }
+
+        .evento-gestao-sidebar.recolhida .evento-gestao-nav-item span,
+        .evento-gestao-sidebar.recolhida .evento-gestao-chevron,
+        .evento-gestao-sidebar.recolhida .evento-gestao-nav-subitens {
+            display: none;
+        }
+        .evento-gestao-sidebar.recolhida .evento-gestao-nav-item { justify-content: center; }
+
+        .evento-gestao-conteudo {
+            flex: 1;
+            min-width: 0;
+        }
+
+        @media (max-width: 768px) {
+            .evento-gestao-layout {
+                flex-direction: column;
+            }
+            .evento-gestao-sidebar {
+                width: 100% !important;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 10px;
+            }
+            .evento-gestao-sidebar-toggle { display: none; }
+            .evento-gestao-nav-item { width: auto; }
+            .evento-gestao-sidebar.recolhida .evento-gestao-nav-item span { display: inline; }
+            .evento-gestao-nav-grupo { width: 100%; }
+        }
+
         .marketing-tabs {
             display: flex;
             gap: 8px;
@@ -9618,126 +9739,184 @@
 
                 <div class="clientes-stats" id="evento-gestao-resumo-financeiro"></div>
 
-                <div class="marketing-tabs" style="margin:20px 0;">
-                    <button type="button" class="marketing-tab active" data-view="programacao" onclick="eventoGestaoTrocarAba('programacao', this)">Programação</button>
-                    <button type="button" class="marketing-tab" data-view="checklist" onclick="eventoGestaoTrocarAba('checklist', this)">Checklist de Produção</button>
-                    <button type="button" class="marketing-tab" data-view="fornecedores" onclick="eventoGestaoTrocarAba('fornecedores', this)">Fornecedores</button>
-                    <button type="button" class="marketing-tab" data-view="equipe" onclick="eventoGestaoTrocarAba('equipe', this)">Equipe &amp; Escalação</button>
-                    <button type="button" class="marketing-tab" data-view="patrocinios" onclick="eventoGestaoTrocarAba('patrocinios', this)">Patrocínios &amp; Parcerias</button>
-                    <button type="button" class="marketing-tab" id="evento-gestao-tab-financeiro" data-view="financeiro" onclick="eventoGestaoTrocarAba('financeiro', this)">Financeiro</button>
-                </div>
-
-                <!-- ABA: PROGRAMAÇÃO -->
-                <div id="evento-gestao-view-programacao" class="marketing-view">
-                    <button type="button" class="add-button" onclick="abrirModalProgramacaoItem()" style="margin-bottom:16px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Novo item da programação
-                    </button>
-                    <div id="evento-gestao-programacao-lista"></div>
-                </div>
-
-                <!-- ABA: CHECKLIST DE PRODUÇÃO -->
-                <div id="evento-gestao-view-checklist" class="marketing-view hidden">
-                    <button type="button" class="add-button" onclick="abrirModalChecklistItem()" style="margin-bottom:16px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Novo item do checklist
-                    </button>
-                    <div id="evento-gestao-checklist-lista"></div>
-                </div>
-
-                <!-- ABA: FORNECEDORES -->
-                <div id="evento-gestao-view-fornecedores" class="marketing-view hidden">
-                    <button type="button" class="add-button" onclick="abrirModalFornecedor()" style="margin-bottom:16px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Novo fornecedor
-                    </button>
-                    <div id="evento-gestao-fornecedores-lista"></div>
-                </div>
-
-                <!-- ABA: EQUIPE & ESCALAÇÃO -->
-                <div id="evento-gestao-view-equipe" class="marketing-view hidden">
-                    <button type="button" class="add-button" onclick="abrirModalEquipeItem()" style="margin-bottom:16px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Escalar pessoa
-                    </button>
-                    <div id="evento-gestao-equipe-lista"></div>
-                </div>
-
-                <!-- ABA: PATROCÍNIOS -->
-                <div id="evento-gestao-view-patrocinios" class="marketing-view hidden">
-                    <button type="button" class="add-button" onclick="abrirModalPatrocinio()" style="margin-bottom:16px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Novo patrocínio/parceria
-                    </button>
-                    <div id="evento-gestao-patrocinios-lista"></div>
-                </div>
-
-                <!-- ABA: FINANCEIRO -->
-                <div id="evento-gestao-view-financeiro" class="marketing-view hidden">
-                    <div class="aparencia-secao" style="margin-bottom:20px;">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px;">Lotes de ingresso</h2>
-                            <p>Cadastre os lotes pra poder vincular a venda a cada um deles no lançamento de receita.</p>
-                        </div>
-                        <button type="button" class="btn-upload" onclick="abrirModalLoteIngresso()" style="margin-bottom:12px;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            Novo lote
+                <div class="evento-gestao-layout">
+                    <!-- SIDEBAR SECUNDÁRIA — navegação dentro deste evento específico.
+                         Fica recolhível pra devolver espaço de tela quando não precisar. -->
+                    <nav class="evento-gestao-sidebar" id="evento-gestao-sidebar">
+                        <button type="button" class="evento-gestao-sidebar-toggle" onclick="eventoGestaoToggleSidebar()" title="Recolher menu">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
                         </button>
-                        <div id="evento-gestao-lotes-lista"></div>
-                    </div>
 
-                    <div class="aparencia-secao" id="evento-gestao-financeiro-resumo-bloco" style="background:var(--green-dark); border:none;">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px; color:#fff;">Resumo do evento</h2>
+                        <button type="button" class="evento-gestao-nav-item active" data-view="programacao" onclick="eventoGestaoTrocarAba('programacao', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <span>Programação</span>
+                        </button>
+                        <button type="button" class="evento-gestao-nav-item" data-view="checklist" onclick="eventoGestaoTrocarAba('checklist', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                            <span>Checklist de Produção</span>
+                        </button>
+                        <button type="button" class="evento-gestao-nav-item" data-view="fornecedores" onclick="eventoGestaoTrocarAba('fornecedores', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18l-2 9H5L3 3z"></path><path d="M5 12l1.5 7h11L19 12"></path></svg>
+                            <span>Fornecedores</span>
+                        </button>
+                        <button type="button" class="evento-gestao-nav-item" data-view="equipe" onclick="eventoGestaoTrocarAba('equipe', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span>Equipe &amp; Escalação</span>
+                        </button>
+                        <button type="button" class="evento-gestao-nav-item" data-view="patrocinios" onclick="eventoGestaoTrocarAba('patrocinios', this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.3 6.9.9-5 4.9 1.2 6.9-6-3.2-6 3.2 1.2-6.9-5-4.9 6.9-.9L12 2z"></path></svg>
+                            <span>Patrocínios &amp; Parcerias</span>
+                        </button>
+
+                        <div class="evento-gestao-nav-grupo" id="evento-gestao-nav-financeiro-grupo">
+                            <button type="button" class="evento-gestao-nav-item evento-gestao-nav-grupo-titulo" id="evento-gestao-tab-financeiro" onclick="eventoGestaoToggleFinanceiroGrupo()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                                <span>Financeiro</span>
+                                <svg class="evento-gestao-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="evento-gestao-nav-subitens" id="evento-gestao-nav-financeiro-subitens">
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-resumo" onclick="eventoGestaoTrocarAba('financeiro-resumo', this)">Resumo</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-lotes" onclick="eventoGestaoTrocarAba('financeiro-lotes', this)">Lotes de ingresso</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-receita" onclick="eventoGestaoTrocarAba('financeiro-receita', this)">Receitas</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-custo_fixo" onclick="eventoGestaoTrocarAba('financeiro-custo_fixo', this)">Custos fixos</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-custo_variavel" onclick="eventoGestaoTrocarAba('financeiro-custo_variavel', this)">Custos variáveis</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-despesa" onclick="eventoGestaoTrocarAba('financeiro-despesa', this)">Despesas</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-investimento" onclick="eventoGestaoTrocarAba('financeiro-investimento', this)">Investimentos</button>
+                            </div>
                         </div>
-                        <div class="clientes-stats" id="evento-gestao-financeiro-dre" style="background:transparent; padding:0;"></div>
-                    </div>
+                    </nav>
 
-                    <button type="button" class="add-button" id="evento-gestao-btn-novo-lancamento" onclick="abrirModalLancamentoFinanceiro()" style="margin:20px 0;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Novo lançamento
-                    </button>
-
-                    <div class="aparencia-secao">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px; color:#166534;">Receitas</h2>
-                            <p>Ingresso, faturamento do bar, patrocínio e parceria — o que entra.</p>
+                    <!-- CONTEÚDO — mostra só a seção escolhida na sidebar acima -->
+                    <div class="evento-gestao-conteudo">
+                        <!-- PROGRAMAÇÃO -->
+                        <div id="evento-gestao-view-programacao" class="marketing-view">
+                            <button type="button" class="add-button" onclick="abrirModalProgramacaoItem()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo item da programação
+                            </button>
+                            <div id="evento-gestao-programacao-lista"></div>
                         </div>
-                        <div id="evento-gestao-financeiro-receita"></div>
-                    </div>
 
-                    <div class="aparencia-secao">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px;">Custos fixos</h2>
-                            <p>Vai acontecer independente do resultado do evento (cachê, equipe, aluguel de estrutura).</p>
+                        <!-- CHECKLIST DE PRODUÇÃO -->
+                        <div id="evento-gestao-view-checklist" class="marketing-view hidden">
+                            <button type="button" class="add-button" onclick="abrirModalChecklistItem()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo item do checklist
+                            </button>
+                            <div id="evento-gestao-checklist-lista"></div>
                         </div>
-                        <div id="evento-gestao-financeiro-custo_fixo"></div>
-                    </div>
 
-                    <div class="aparencia-secao">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px;">Custos variáveis</h2>
-                            <p>Muda conforme o desempenho do evento (taxa de cartão/Pix, item por pessoa).</p>
+                        <!-- FORNECEDORES -->
+                        <div id="evento-gestao-view-fornecedores" class="marketing-view hidden">
+                            <button type="button" class="add-button" onclick="abrirModalFornecedor()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo fornecedor
+                            </button>
+                            <div id="evento-gestao-fornecedores-lista"></div>
                         </div>
-                        <div id="evento-gestao-financeiro-custo_variavel"></div>
-                    </div>
 
-                    <div class="aparencia-secao">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px;">Despesas</h2>
-                            <p>Pontual ou imprevisto.</p>
+                        <!-- EQUIPE & ESCALAÇÃO -->
+                        <div id="evento-gestao-view-equipe" class="marketing-view hidden">
+                            <button type="button" class="add-button" onclick="abrirModalEquipeItem()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Escalar pessoa
+                            </button>
+                            <div id="evento-gestao-equipe-lista"></div>
                         </div>
-                        <div id="evento-gestao-financeiro-despesa"></div>
-                    </div>
 
-                    <div class="aparencia-secao">
-                        <div class="aparencia-secao-titulo">
-                            <h2 style="font-size:15px;">Investimentos</h2>
-                            <p>O que você coloca pra fazer o evento acontecer ou crescer.</p>
+                        <!-- PATROCÍNIOS -->
+                        <div id="evento-gestao-view-patrocinios" class="marketing-view hidden">
+                            <button type="button" class="add-button" onclick="abrirModalPatrocinio()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo patrocínio/parceria
+                            </button>
+                            <div id="evento-gestao-patrocinios-lista"></div>
                         </div>
-                        <div id="evento-gestao-financeiro-investimento"></div>
+
+                        <!-- FINANCEIRO: RESUMO -->
+                        <div id="evento-gestao-view-financeiro-resumo" class="marketing-view hidden">
+                            <div class="aparencia-secao" id="evento-gestao-financeiro-resumo-bloco" style="background:var(--green-dark); border:none;">
+                                <div class="aparencia-secao-titulo">
+                                    <h2 style="font-size:15px; color:#fff;">Resumo do evento</h2>
+                                </div>
+                                <div class="clientes-stats" id="evento-gestao-financeiro-dre" style="background:transparent; padding:0;"></div>
+                            </div>
+                        </div>
+
+                        <!-- FINANCEIRO: LOTES DE INGRESSO -->
+                        <div id="evento-gestao-view-financeiro-lotes" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>Cadastre os lotes pra poder vincular a venda a cada um deles no lançamento de receita.</p>
+                            </div>
+                            <button type="button" class="btn-upload" onclick="abrirModalLoteIngresso()" style="margin-bottom:16px;">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo lote
+                            </button>
+                            <div id="evento-gestao-lotes-lista"></div>
+                        </div>
+
+                        <!-- FINANCEIRO: RECEITAS -->
+                        <div id="evento-gestao-view-financeiro-receita" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>Ingresso, faturamento do bar, patrocínio e parceria — o que entra.</p>
+                            </div>
+                            <button type="button" class="add-button" onclick="abrirModalLancamentoFinanceiro(null, 'receita')" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo lançamento
+                            </button>
+                            <div id="evento-gestao-financeiro-receita"></div>
+                        </div>
+
+                        <!-- FINANCEIRO: CUSTOS FIXOS -->
+                        <div id="evento-gestao-view-financeiro-custo_fixo" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>Vai acontecer independente do resultado do evento (cachê, equipe, aluguel de estrutura).</p>
+                            </div>
+                            <button type="button" class="add-button" onclick="abrirModalLancamentoFinanceiro(null, 'custo_fixo')" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo lançamento
+                            </button>
+                            <div id="evento-gestao-financeiro-custo_fixo"></div>
+                        </div>
+
+                        <!-- FINANCEIRO: CUSTOS VARIÁVEIS -->
+                        <div id="evento-gestao-view-financeiro-custo_variavel" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>Muda conforme o desempenho do evento (taxa de cartão/Pix, item por pessoa).</p>
+                            </div>
+                            <button type="button" class="add-button" onclick="abrirModalLancamentoFinanceiro(null, 'custo_variavel')" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo lançamento
+                            </button>
+                            <div id="evento-gestao-financeiro-custo_variavel"></div>
+                        </div>
+
+                        <!-- FINANCEIRO: DESPESAS -->
+                        <div id="evento-gestao-view-financeiro-despesa" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>Pontual ou imprevisto.</p>
+                            </div>
+                            <button type="button" class="add-button" onclick="abrirModalLancamentoFinanceiro(null, 'despesa')" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo lançamento
+                            </button>
+                            <div id="evento-gestao-financeiro-despesa"></div>
+                        </div>
+
+                        <!-- FINANCEIRO: INVESTIMENTOS -->
+                        <div id="evento-gestao-view-financeiro-investimento" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>O que você coloca pra fazer o evento acontecer ou crescer.</p>
+                            </div>
+                            <button type="button" class="add-button" onclick="abrirModalLancamentoFinanceiro(null, 'investimento')" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo lançamento
+                            </button>
+                            <div id="evento-gestao-financeiro-investimento"></div>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
             <!-- MODAL: LOTE DE INGRESSO -->
@@ -15520,12 +15699,13 @@
         document.getElementById('evento-gestao-nome').textContent = eventoNomeExibicao(evento);
         document.getElementById('evento-gestao-data').textContent = `${dia}/${mes}/${ano}`;
 
-        const btnFinanceiroTab = document.getElementById('evento-gestao-tab-financeiro');
-        if (btnFinanceiroTab) btnFinanceiroTab.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
+        const grupoFinanceiro = document.getElementById('evento-gestao-nav-financeiro-grupo');
+        if (grupoFinanceiro) grupoFinanceiro.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
 
         eventoGestaoAbaAtual = 'programacao';
-        document.querySelectorAll('#evento-gestao-page .marketing-tab').forEach(t => t.classList.remove('active'));
-        document.querySelector('#evento-gestao-page .marketing-tab[data-view="programacao"]').classList.add('active');
+        document.querySelectorAll('#evento-gestao-page .evento-gestao-nav-item, #evento-gestao-page .evento-gestao-nav-subitem').forEach(t => t.classList.remove('active'));
+        document.querySelector('#evento-gestao-page .evento-gestao-nav-item[data-view="programacao"]').classList.add('active');
+        if (grupoFinanceiro) grupoFinanceiro.classList.remove('aberto');
         document.querySelectorAll('#evento-gestao-page .marketing-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('evento-gestao-view-programacao').classList.remove('hidden');
 
@@ -15544,10 +15724,35 @@
 
     function eventoGestaoTrocarAba(aba, btn) {
         eventoGestaoAbaAtual = aba;
-        document.querySelectorAll('#evento-gestao-page .marketing-tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
+        document.querySelectorAll('#evento-gestao-page .evento-gestao-nav-item, #evento-gestao-page .evento-gestao-nav-subitem').forEach(t => t.classList.remove('active'));
+        if (btn) btn.classList.add('active');
         document.querySelectorAll('#evento-gestao-page .marketing-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('evento-gestao-view-' + aba).classList.remove('hidden');
+
+        // Se for uma sub-página do Financeiro, garante que o grupo
+        // esteja aberto e o botão "Financeiro" pareça selecionado.
+        const grupoFinanceiro = document.getElementById('evento-gestao-nav-financeiro-grupo');
+        if (aba.startsWith('financeiro-')) {
+            grupoFinanceiro.classList.add('aberto');
+            document.getElementById('evento-gestao-tab-financeiro').classList.add('active');
+        } else {
+            document.getElementById('evento-gestao-tab-financeiro').classList.remove('active');
+        }
+    }
+
+    function eventoGestaoToggleFinanceiroGrupo() {
+        const grupo = document.getElementById('evento-gestao-nav-financeiro-grupo');
+        const sidebar = document.getElementById('evento-gestao-sidebar');
+        // Se a sidebar estiver recolhida, o clique no grupo já expande ela
+        // de volta — clicar num ícone sozinho e nada acontecer confundiria.
+        if (sidebar.classList.contains('recolhida')) {
+            eventoGestaoToggleSidebar();
+        }
+        grupo.classList.toggle('aberto');
+    }
+
+    function eventoGestaoToggleSidebar() {
+        document.getElementById('evento-gestao-sidebar').classList.toggle('recolhida');
     }
 
     function formatarMoeda(valor) {
@@ -16290,13 +16495,13 @@
         }
     }
 
-    function abrirModalLancamentoFinanceiro(id) {
+    function abrirModalLancamentoFinanceiro(id, tipoPreSelecionado) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const l = id ? ((evento.financeiro && evento.financeiro.lancamentos) || []).find(x => x.id === id) : null;
 
         document.getElementById('lancamento-titulo-modal').textContent = l ? 'Editar lançamento' : 'Novo lançamento';
         document.getElementById('lancamento-id').value = l ? l.id : '';
-        document.getElementById('lancamento-tipo').value = l ? l.tipo : 'despesa';
+        document.getElementById('lancamento-tipo').value = l ? l.tipo : (tipoPreSelecionado || 'despesa');
         document.getElementById('lancamento-origem').value = (l && l.origem) ? l.origem : 'ingresso';
         document.getElementById('lancamento-descricao').value = l ? l.descricao : '';
         document.getElementById('lancamento-valor').value = l ? String(l.valor).replace('.', ',') : '';
