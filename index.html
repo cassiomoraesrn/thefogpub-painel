@@ -1474,9 +1474,108 @@
 
         .clientes-stats strong { color: var(--black); font-size: 14px; }
 
-        #evento-gestao-financeiro-resumo-bloco .clientes-stats,
-        #evento-gestao-financeiro-resumo-bloco .clientes-stats strong {
+        /* =====================================================
+           PAINEL FINANCEIRO (dentro da Gestão de Eventos) — referência:
+           números tabulares alinhados à direita e cor só como indicador
+           de estado (padrão Stripe/Mercury), não decoração.
+           ===================================================== */
+        .fin-hero {
+            background: var(--green-dark);
+            border-radius: 14px;
+            padding: 26px 24px;
             color: #fff;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .fin-hero-label { font-size: 13px; color: rgba(255,255,255,0.68); }
+        .fin-hero-valor {
+            font-size: 38px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.02em;
+        }
+        .fin-hero-valor.negativo { color: #FCA5A5; }
+
+        .fin-resumo-tabela {
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .fin-resumo-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 13px 16px;
+            font-size: 13.5px;
+        }
+        .fin-resumo-linha:not(:last-child) { border-bottom: 1px solid var(--line); }
+        .fin-resumo-linha-label { color: var(--warm-gray); }
+        .fin-resumo-linha-valor { font-variant-numeric: tabular-nums; font-weight: 600; }
+        .fin-resumo-linha-valor.positivo { color: #166534; }
+        .fin-resumo-linha-valor.negativo { color: #991B1B; }
+
+        .fin-tabela-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 4px 2px 12px;
+        }
+        .fin-tabela-total { font-size: 13px; color: var(--warm-gray); }
+        .fin-tabela-total strong { font-variant-numeric: tabular-nums; color: var(--black); font-size: 16px; margin-left: 6px; }
+
+        .fin-linha {
+            display: grid;
+            grid-template-columns: 84px 1fr auto auto;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 14px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 6px;
+        }
+        .fin-linha-data { font-size: 12px; color: var(--warm-gray); }
+        .fin-linha-desc { font-size: 13.5px; color: var(--black); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+        .fin-linha-tag { font-size: 11px; padding: 2px 9px; border-radius: 20px; background: var(--beige); color: var(--warm-gray); white-space: nowrap; }
+        .fin-linha-valor { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 14px; text-align: right; white-space: nowrap; }
+        .fin-linha-valor.positivo { color: #166534; }
+        .fin-linha-valor.negativo { color: #991B1B; }
+        .fin-linha-acoes { display: flex; gap: 4px; }
+
+        .fin-lote-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .fin-lote-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .fin-lote-nome { font-size: 14px; font-weight: 600; color: var(--black); }
+        .fin-lote-detalhe { font-size: 12.5px; color: var(--warm-gray); }
+        .fin-lote-direita { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+        .fin-lote-preco { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 16px; color: var(--black); text-align: right; }
+        .fin-lote-vendidos { font-size: 12px; color: var(--warm-gray); text-align: right; }
+
+        @media (max-width: 600px) {
+            .fin-linha {
+                grid-template-columns: 1fr auto;
+                grid-template-areas: "desc valor" "data acoes";
+                row-gap: 8px;
+            }
+            .fin-linha-data { grid-area: data; }
+            .fin-linha-desc { grid-area: desc; }
+            .fin-linha-valor { grid-area: valor; }
+            .fin-linha-acoes { grid-area: acoes; justify-self: end; }
+            .fin-hero-valor { font-size: 30px; }
         }
 
         .cliente-fase2-placeholder {
@@ -9835,12 +9934,7 @@
 
                         <!-- FINANCEIRO: RESUMO -->
                         <div id="evento-gestao-view-financeiro-resumo" class="marketing-view hidden">
-                            <div class="aparencia-secao" id="evento-gestao-financeiro-resumo-bloco" style="background:var(--green-dark); border:none;">
-                                <div class="aparencia-secao-titulo">
-                                    <h2 style="font-size:15px; color:#fff;">Resumo do evento</h2>
-                                </div>
-                                <div class="clientes-stats" id="evento-gestao-financeiro-dre" style="background:transparent; padding:0;"></div>
-                            </div>
+                            <div id="evento-gestao-financeiro-dre"></div>
                         </div>
 
                         <!-- FINANCEIRO: LOTES DE INGRESSO -->
@@ -16374,15 +16468,20 @@
         lista.innerHTML = lotes.map(l => {
             const vendidos = eventoContarVendidosDoLote(evento, l.id);
             return `
-                <div class="usuario-item">
-                    <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:12px;">${formatarMoeda(l.precoUnitario).replace('R$ ', '')}</div>
-                    <div class="usuario-item-info">
-                        <div class="usuario-item-nome">${l.nome}</div>
-                        <div class="usuario-item-detalhe">${l.inclui || 'Sem itens inclusos'} · ${vendidos}${l.quantidadeTotal ? ' de ' + l.quantidadeTotal : ''} vendido${vendidos !== 1 ? 's' : ''}</div>
+                <div class="fin-lote-card">
+                    <div class="fin-lote-info">
+                        <span class="fin-lote-nome">${l.nome}</span>
+                        <span class="fin-lote-detalhe">${l.inclui || 'Sem itens inclusos'}</span>
                     </div>
-                    <div class="usuario-item-acoes">
-                        <button class="btn-icon-acao" onclick="abrirModalLoteIngresso('${l.id}')" title="Editar">${ICONE_EDITAR}</button>
-                        <button class="btn-icon-acao excluir" onclick="excluirLoteIngresso('${l.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                    <div class="fin-lote-direita">
+                        <div>
+                            <div class="fin-lote-preco">${formatarMoeda(l.precoUnitario)}</div>
+                            <div class="fin-lote-vendidos">${vendidos}${l.quantidadeTotal ? ' de ' + l.quantidadeTotal : ''} vendido${vendidos !== 1 ? 's' : ''}</div>
+                        </div>
+                        <span class="fin-linha-acoes">
+                            <button class="btn-icon-acao" onclick="abrirModalLoteIngresso('${l.id}')" title="Editar">${ICONE_EDITAR}</button>
+                            <button class="btn-icon-acao excluir" onclick="excluirLoteIngresso('${l.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                        </span>
                     </div>
                 </div>`;
         }).join('');
@@ -16589,36 +16688,56 @@
         const lucro = receita + receitaPatrocinio - custoFixo - custoVariavel - despesa - investimento - despesaFornecedores;
 
         if (dre) {
+            const linhasResumo = [
+                { label: 'Receita (ingresso, faturamento, patrocínio pago...)', valor: receita + receitaPatrocinio, positivo: true },
+                { label: 'Custos fixos', valor: custoFixo, positivo: false },
+                { label: 'Custos variáveis', valor: custoVariavel, positivo: false },
+                { label: 'Despesas', valor: despesa, positivo: false },
+                { label: 'Investimentos', valor: investimento, positivo: false },
+                { label: 'Fornecedores (pago)', valor: despesaFornecedores, positivo: false }
+            ];
             dre.innerHTML = `
-                <span>Receita (ingresso/faturamento/patrocínio pago...): <strong>${formatarMoeda(receita + receitaPatrocinio)}</strong></span>
-                <span>Custos fixos: <strong>${formatarMoeda(-custoFixo)}</strong></span>
-                <span>Custos variáveis: <strong>${formatarMoeda(-custoVariavel)}</strong></span>
-                <span>Despesas: <strong>${formatarMoeda(-despesa)}</strong></span>
-                <span>Investimentos: <strong>${formatarMoeda(-investimento)}</strong></span>
-                <span>Fornecedores (pago): <strong>${formatarMoeda(-despesaFornecedores)}</strong></span>
-                <span>Lucro líquido: <strong style="color:${lucro >= 0 ? '#86EFAC' : '#FCA5A5'}; font-size:16px;">${formatarMoeda(lucro)}</strong></span>`;
+                <div class="fin-hero">
+                    <span class="fin-hero-label">Lucro líquido estimado até agora</span>
+                    <span class="fin-hero-valor${lucro < 0 ? ' negativo' : ''}">${formatarMoeda(lucro)}</span>
+                </div>
+                <div class="fin-resumo-tabela">
+                    ${linhasResumo.map(l => `
+                        <div class="fin-resumo-linha">
+                            <span class="fin-resumo-linha-label">${l.label}</span>
+                            <span class="fin-resumo-linha-valor ${l.positivo ? 'positivo' : 'negativo'}">${formatarMoeda(l.positivo ? l.valor : -l.valor)}</span>
+                        </div>`).join('')}
+                </div>`;
         }
 
         const categorias = [
-            { tipo: 'receita', containerId: 'evento-gestao-financeiro-receita' },
-            { tipo: 'custo_fixo', containerId: 'evento-gestao-financeiro-custo_fixo' },
-            { tipo: 'custo_variavel', containerId: 'evento-gestao-financeiro-custo_variavel' },
-            { tipo: 'despesa', containerId: 'evento-gestao-financeiro-despesa' },
-            { tipo: 'investimento', containerId: 'evento-gestao-financeiro-investimento' }
+            { tipo: 'receita', containerId: 'evento-gestao-financeiro-receita', totalLabel: 'Total de receitas' },
+            { tipo: 'custo_fixo', containerId: 'evento-gestao-financeiro-custo_fixo', totalLabel: 'Total de custos fixos' },
+            { tipo: 'custo_variavel', containerId: 'evento-gestao-financeiro-custo_variavel', totalLabel: 'Total de custos variáveis' },
+            { tipo: 'despesa', containerId: 'evento-gestao-financeiro-despesa', totalLabel: 'Total de despesas' },
+            { tipo: 'investimento', containerId: 'evento-gestao-financeiro-investimento', totalLabel: 'Total investido' }
         ];
 
-        categorias.forEach(({ tipo, containerId }) => {
+        categorias.forEach(({ tipo, containerId, totalLabel }) => {
             const container = document.getElementById(containerId);
             if (!container) return;
 
             const itensDaCategoria = lancamentos.filter(l => l.tipo === tipo);
+            const ehReceita = tipo === 'receita';
+            const totalCategoria = itensDaCategoria.reduce((s, l) => s + l.valor, 0);
+
+            const cabecalho = `
+                <div class="fin-tabela-header">
+                    <span></span>
+                    <span class="fin-tabela-total">${totalLabel}: <strong>${formatarMoeda(totalCategoria)}</strong></span>
+                </div>`;
+
             if (itensDaCategoria.length === 0) {
-                container.innerHTML = '<div class="bandas-vazio">Nenhum lançamento nessa categoria ainda.</div>';
+                container.innerHTML = cabecalho + '<div class="bandas-vazio">Nenhum lançamento nessa categoria ainda.</div>';
                 return;
             }
 
-            const ehReceita = tipo === 'receita';
-            container.innerHTML = itensDaCategoria.map(l => {
+            const linhas = itensDaCategoria.map(l => {
                 let detalheOrigem = '';
                 if (ehReceita && l.origem) {
                     detalheOrigem = LANCAMENTO_ORIGEM_LABEL[l.origem];
@@ -16627,20 +16746,20 @@
                         if (lote) detalheOrigem += ' (' + lote.nome + ')';
                     }
                 }
+                const dataFormatada = l.data ? new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—';
                 return `
-                <div class="usuario-item">
-                    <div class="usuario-avatar" style="background:${ehReceita ? '#166534' : '#991B1B'}; width:40px; height:40px; font-size:11px;">${ehReceita ? '+' : '−'}</div>
-                    <div class="usuario-item-info">
-                        <div class="usuario-item-nome">${l.descricao}${detalheOrigem ? ` <span class="usuario-badge-convite">${detalheOrigem}</span>` : ''}</div>
-                        <div class="usuario-item-detalhe">${l.data ? new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR') : 'Sem data'}</div>
-                    </div>
-                    <span class="cliente-item-idade-badge" style="background:${ehReceita ? '#DCFCE7' : '#FEE2E2'}; color:${ehReceita ? '#166534' : '#991B1B'};">${formatarMoeda(ehReceita ? l.valor : -l.valor)}</span>
-                    <div class="usuario-item-acoes">
+                <div class="fin-linha">
+                    <span class="fin-linha-data">${dataFormatada}</span>
+                    <span class="fin-linha-desc">${l.descricao}${detalheOrigem ? `<span class="fin-linha-tag">${detalheOrigem}</span>` : ''}</span>
+                    <span class="fin-linha-valor ${ehReceita ? 'positivo' : 'negativo'}">${formatarMoeda(ehReceita ? l.valor : -l.valor)}</span>
+                    <span class="fin-linha-acoes">
                         <button class="btn-icon-acao" onclick="abrirModalLancamentoFinanceiro('${l.id}')" title="Editar">${ICONE_EDITAR}</button>
                         <button class="btn-icon-acao excluir" onclick="excluirLancamentoFinanceiro('${l.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
-                    </div>
+                    </span>
                 </div>`;
             }).join('');
+
+            container.innerHTML = cabecalho + linhas;
         });
     }
 
