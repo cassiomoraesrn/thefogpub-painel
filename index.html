@@ -1154,6 +1154,22 @@
             background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
         }
 
+        .card-icon.receita {
+            background: linear-gradient(135deg, #166534 0%, #22C55E 100%);
+        }
+
+        .card-icon.saida {
+            background: linear-gradient(135deg, #991B1B 0%, #EF4444 100%);
+        }
+
+        .card-icon.ingresso {
+            background: linear-gradient(135deg, var(--brown) 0%, var(--brown-light) 100%);
+        }
+
+        .card-icon.patrocinio {
+            background: linear-gradient(135deg, #B45309 0%, #F59E0B 100%);
+        }
+
         .card-content {
             flex: 1;
             min-width: 0;
@@ -9935,6 +9951,21 @@
                         <!-- FINANCEIRO: RESUMO -->
                         <div id="evento-gestao-view-financeiro-resumo" class="marketing-view hidden">
                             <div id="evento-gestao-financeiro-dre"></div>
+                            <div class="dashboard-cards" id="fin-resumo-cards" style="margin:20px 0 24px;"></div>
+                            <div class="dashboard-graficos-grid">
+                                <div class="grafico-card">
+                                    <h3>Para onde vai o dinheiro</h3>
+                                    <div class="grafico-canvas-wrap">
+                                        <canvas id="chart-fin-saidas"></canvas>
+                                    </div>
+                                </div>
+                                <div class="grafico-card">
+                                    <h3>De onde vem a receita</h3>
+                                    <div class="grafico-canvas-wrap">
+                                        <canvas id="chart-fin-receitas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- FINANCEIRO: LOTES DE INGRESSO -->
@@ -16668,6 +16699,155 @@
         eventoGestaoRenderResumoFinanceiro();
     }
 
+    let chartFinSaidas = null;
+    let chartFinReceitas = null;
+
+    function eventoGestaoRenderDashboardFinanceiro(evento, lancamentos, totais) {
+        const { custoFixo, custoVariavel, despesa, investimento, receitaPatrocinio, despesaFornecedores, lucro } = totais;
+
+        const somaPorOrigem = (origem) => lancamentos.filter(l => l.tipo === 'receita' && l.origem === origem).reduce((s, l) => s + l.valor, 0);
+        const receitaIngresso = somaPorOrigem('ingresso');
+        const receitaFaturamento = somaPorOrigem('faturamento');
+        const receitaParceria = somaPorOrigem('parceria');
+        const receitaOutra = somaPorOrigem('outra');
+        const receitaPatrocinioTotal = somaPorOrigem('patrocinio') + receitaPatrocinio;
+        const receitaTotalGeral = receitaIngresso + receitaFaturamento + receitaParceria + receitaOutra + receitaPatrocinioTotal;
+        const totalSaidas = custoFixo + custoVariavel + despesa + investimento + despesaFornecedores;
+        const qtdVendasIngresso = lancamentos.filter(l => l.tipo === 'receita' && l.origem === 'ingresso').length;
+
+        // ---------- Cards ----------
+        const cardsContainer = document.getElementById('fin-resumo-cards');
+        if (cardsContainer) {
+            cardsContainer.innerHTML = `
+                <div class="card">
+                    <div class="card-icon ingresso">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 0 0 3-3h12a3 3 0 0 0 3 3v6a3 3 0 0 0-3 3H6a3 3 0 0 0-3-3z"></path><circle cx="12" cy="12" r="2"></circle></svg>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">Receita de ingressos</p>
+                        <p class="card-value">${formatarMoeda(receitaIngresso)}</p>
+                        <p class="card-sub">${qtdVendasIngresso} venda${qtdVendasIngresso !== 1 ? 's' : ''} registrada${qtdVendasIngresso !== 1 ? 's' : ''}</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon patrocinio">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3 6.9.9-5 4.9 1.2 6.9-6-3.2-6 3.2 1.2-6.9-5-4.9 6.9-.9L12 2z"></path></svg>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">Patrocínio recebido</p>
+                        <p class="card-value">${formatarMoeda(receitaPatrocinioTotal)}</p>
+                        <p class="card-sub">${(evento.patrocinios || []).filter(p => p.statusPagamento === 'pago').length} patrocínio${(evento.patrocinios || []).filter(p => p.statusPagamento === 'pago').length !== 1 ? 's' : ''} pago${(evento.patrocinios || []).filter(p => p.statusPagamento === 'pago').length !== 1 ? 's' : ''}</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon receita">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">Receita total</p>
+                        <p class="card-value">${formatarMoeda(receitaTotalGeral)}</p>
+                        <p class="card-sub">Ingresso, faturamento, patrocínio e parceria</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-icon saida">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    </div>
+                    <div class="card-content">
+                        <p class="card-title">Total de saídas</p>
+                        <p class="card-value">${formatarMoeda(totalSaidas)}</p>
+                        <p class="card-sub">Custos, despesas, investimentos e fornecedores</p>
+                    </div>
+                </div>`;
+        }
+
+        // ---------- Gráfico: para onde vai o dinheiro ----------
+        const canvasSaidas = document.getElementById('chart-fin-saidas');
+        if (canvasSaidas && typeof Chart !== 'undefined') {
+            const dadosSaidas = [
+                { label: 'Custos fixos', valor: custoFixo, cor: '#24411E' },
+                { label: 'Custos variáveis', valor: custoVariavel, cor: '#3d6b31' },
+                { label: 'Despesas', valor: despesa, cor: '#EF4444' },
+                { label: 'Investimentos', valor: investimento, cor: '#F59E0B' },
+                { label: 'Fornecedores', valor: despesaFornecedores, cor: '#996633' }
+            ].filter(d => d.valor > 0);
+
+            if (chartFinSaidas) chartFinSaidas.destroy();
+            if (dadosSaidas.length === 0) {
+                canvasSaidas.parentElement.innerHTML = '<div class="bandas-vazio" style="height:100%; display:flex; align-items:center; justify-content:center;">Nenhuma saída lançada ainda.</div>';
+            } else {
+                chartFinSaidas = new Chart(canvasSaidas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: dadosSaidas.map(d => d.label),
+                        datasets: [{
+                            data: dadosSaidas.map(d => d.valor),
+                            backgroundColor: dadosSaidas.map(d => d.cor),
+                            borderColor: '#ffffff',
+                            borderWidth: 3,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 11, weight: '600' }, color: '#8A8578', padding: 12, usePointStyle: true, pointStyle: 'circle' } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.85)', padding: 10, cornerRadius: 6,
+                                titleFont: { size: 12, weight: 'bold' }, bodyFont: { size: 11 }, displayColors: false,
+                                callbacks: { label: (ctx) => formatarMoeda(ctx.parsed) }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // ---------- Gráfico: de onde vem a receita ----------
+        const canvasReceitas = document.getElementById('chart-fin-receitas');
+        if (canvasReceitas && typeof Chart !== 'undefined') {
+            const dadosReceitas = [
+                { label: 'Ingresso', valor: receitaIngresso, cor: '#996633' },
+                { label: 'Patrocínio', valor: receitaPatrocinioTotal, cor: '#F59E0B' },
+                { label: 'Faturamento do bar', valor: receitaFaturamento, cor: '#22C55E' },
+                { label: 'Parceria', valor: receitaParceria, cor: '#3B82F6' },
+                { label: 'Outra', valor: receitaOutra, cor: '#8A8578' }
+            ].filter(d => d.valor > 0);
+
+            if (chartFinReceitas) chartFinReceitas.destroy();
+            if (dadosReceitas.length === 0) {
+                canvasReceitas.parentElement.innerHTML = '<div class="bandas-vazio" style="height:100%; display:flex; align-items:center; justify-content:center;">Nenhuma receita lançada ainda.</div>';
+            } else {
+                chartFinReceitas = new Chart(canvasReceitas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: dadosReceitas.map(d => d.label),
+                        datasets: [{
+                            data: dadosReceitas.map(d => d.valor),
+                            backgroundColor: dadosReceitas.map(d => d.cor),
+                            borderColor: '#ffffff',
+                            borderWidth: 3,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 11, weight: '600' }, color: '#8A8578', padding: 12, usePointStyle: true, pointStyle: 'circle' } },
+                            tooltip: {
+                                backgroundColor: 'rgba(0,0,0,0.85)', padding: 10, cornerRadius: 6,
+                                titleFont: { size: 12, weight: 'bold' }, bodyFont: { size: 11 }, displayColors: false,
+                                callbacks: { label: (ctx) => formatarMoeda(ctx.parsed) }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
     function eventoGestaoRenderFinanceiro() {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const dre = document.getElementById('evento-gestao-financeiro-dre');
@@ -16709,6 +16889,8 @@
                         </div>`).join('')}
                 </div>`;
         }
+
+        eventoGestaoRenderDashboardFinanceiro(evento, lancamentos, { receita, custoFixo, custoVariavel, despesa, investimento, receitaPatrocinio, despesaFornecedores, lucro });
 
         const categorias = [
             { tipo: 'receita', containerId: 'evento-gestao-financeiro-receita', totalLabel: 'Total de receitas' },
