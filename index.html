@@ -11805,7 +11805,7 @@
         }).join('');
     }
 
-    function lixeiraRestaurar(lixeiraId) {
+    async function lixeiraRestaurar(lixeiraId) {
         const item = lixeira.find(x => x.id === lixeiraId);
         if (!item) return;
 
@@ -11817,7 +11817,7 @@
             salvarClientesStorage();
         } else if (item.tipo === 'usuario') {
             usuariosSistema.push(item.dados);
-            salvarUsuariosStorage();
+            await sincronizarUsuario(item.dados.id);
         }
 
         lixeira = lixeira.filter(x => x.id !== lixeiraId);
@@ -14969,6 +14969,107 @@
         });
     }
 
+    // =====================================================
+    //  USUÁRIOS E FUNÇÕES — também sincronizados com o Supabase.
+    //  "usuariosSistema" (array) e "PAPEIS_USUARIO" (objeto por id)
+    //  continuam existindo em memória com o mesmo formato de sempre;
+    //  a diferença é que agora são carregados do banco compartilhado
+    //  em vez do localStorage, e toda alteração é enviada de volta.
+    // =====================================================
+    async function carregarUsuariosEFuncoesDoSupabase() {
+        const [usuariosR, funcoesR] = await Promise.all([
+            supabaseClient.from('usuarios').select('*'),
+            supabaseClient.from('funcoes_usuario').select('*')
+        ]);
+
+        if (usuariosR.error || funcoesR.error) {
+            mostrarErroConexaoSupabase();
+            return false;
+        }
+
+        // Primeira vez que alguém usa esse banco: as tabelas estão
+        // vazias. Semeamos com o que já existe em memória agora (que
+        // por sua vez já carregou do localStorage antigo, se houver, ou
+        // dos padrões de fábrica) — assim ninguém perde acesso nem
+        // precisa recriar contas.
+        if (usuariosR.data.length === 0 && usuariosSistema.length > 0) {
+            await Promise.all(usuariosSistema.map(u => sincronizarUsuario(u.id)));
+        } else {
+            usuariosSistema = usuariosR.data.map(row => ({
+                id: row.id, nome: row.nome, email: row.email, telefone: row.telefone || '',
+                papel: row.papel, ehAdmin: row.eh_admin, permissoes: row.permissoes || {},
+                senha: row.senha, statusConta: row.status_conta
+            }));
+        }
+
+        if (funcoesR.data.length === 0 && Object.keys(PAPEIS_USUARIO).length > 0) {
+            await Promise.all(Object.keys(PAPEIS_USUARIO).map(id => sincronizarFuncao(id)));
+        } else {
+            const novoPapeis = {};
+            funcoesR.data.forEach(row => {
+                novoPapeis[row.id] = {
+                    nome: row.nome, abrev: row.abrev, cor: row.cor,
+                    protegida: row.protegida, permissoesPadrao: row.permissoes_padrao
+                };
+            });
+            PAPEIS_USUARIO = novoPapeis;
+        }
+
+        return true;
+    }
+
+    async function sincronizarUsuario(usuarioId) {
+        const u = usuariosSistema.find(x => x.id === usuarioId);
+        if (!u || !supabaseClient) return;
+        await supabaseClient.from('usuarios').upsert({
+            id: u.id, nome: u.nome, email: u.email, telefone: u.telefone || '',
+            papel: u.papel, eh_admin: u.ehAdmin, permissoes: u.permissoes,
+            senha: u.senha, status_conta: u.statusConta, atualizado_em: new Date().toISOString()
+        });
+    }
+
+    async function excluirUsuarioSupabase(usuarioId) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('usuarios').delete().eq('id', usuarioId);
+    }
+
+    async function sincronizarFuncao(funcaoId) {
+        const f = PAPEIS_USUARIO[funcaoId];
+        if (!f || !supabaseClient) return;
+        await supabaseClient.from('funcoes_usuario').upsert({
+            id: funcaoId, nome: f.nome, abrev: f.abrev, cor: f.cor,
+            protegida: !!f.protegida, permissoes_padrao: f.permissoesPadrao
+        });
+    }
+
+    async function excluirFuncaoSupabase(funcaoId) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('funcoes_usuario').delete().eq('id', funcaoId);
+    }
+
+    let recarregandoUsuariosEFuncoes = false;
+    async function recarregarUsuariosEFuncoesERerenderizar() {
+        if (recarregandoUsuariosEFuncoes) return;
+        recarregandoUsuariosEFuncoes = true;
+        const ok = await carregarUsuariosEFuncoesDoSupabase();
+        recarregandoUsuariosEFuncoes = false;
+        if (!ok) return;
+        contaRenderUsuarios();
+    }
+
+    function iniciarRealtimeUsuariosEFuncoes() {
+        if (!supabaseClient) return;
+        const canal = supabaseClient.channel('usuarios-realtime');
+        ['usuarios', 'funcoes_usuario'].forEach(tabela => {
+            canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela }, () => {
+                recarregarUsuariosEFuncoesERerenderizar();
+            });
+        });
+        canal.subscribe((status, err) => {
+            console.log('Realtime (usuários): status da inscrição:', status, err || '');
+        });
+    }
+
     function eventoNomeExibicao(evento) {
         return evento.nomeEvento || evento.bandas.map(b => nomeBandaPorId(b.bandaId)).join(' + ') || 'Evento';
     }
@@ -17866,22 +17967,26 @@
     // no que você já customizou. É chamada só dentro do DOMContentLoaded
     // (precisa que PERMISSOES_DISPONIVEIS já exista, e ela é declarada
     // bem mais abaixo no arquivo).
-    function migrarPermissoesPadraoFuncoes() {
+    async function migrarPermissoesPadraoFuncoes() {
         const seedPadrao = funcoesUsuarioSeedPadrao();
-        let mudou = false;
+        const funcoesAlteradas = [];
         Object.keys(PAPEIS_USUARIO).forEach(id => {
             const funcao = PAPEIS_USUARIO[id];
             if (!funcao || funcao.protegida) return; // proprietário não usa permissoesPadrao
             if (!funcao.permissoesPadrao) funcao.permissoesPadrao = {};
             const padraoRef = (seedPadrao[id] && seedPadrao[id].permissoesPadrao) || {};
+            let mudouEssa = false;
             PERMISSOES_DISPONIVEIS.forEach(p => {
                 if (!(p.chave in funcao.permissoesPadrao)) {
                     funcao.permissoesPadrao[p.chave] = padraoRef[p.chave] || false;
-                    mudou = true;
+                    mudouEssa = true;
                 }
             });
+            if (mudouEssa) funcoesAlteradas.push(id);
         });
-        if (mudou) salvarFuncoesStorage();
+        if (funcoesAlteradas.length) {
+            await Promise.all(funcoesAlteradas.map(id => sincronizarFuncao(id)));
+        }
     }
 
     function salvarFuncoesStorage() {
@@ -19712,20 +19817,24 @@
     // Migração: preenche nos usuários já existentes as permissões novas
     // que não existiam quando eles foram criados — usando o padrão da
     // função de cada um como base (chamada só dentro do DOMContentLoaded).
-    function migrarPermissoesUsuarios() {
-        let mudou = false;
+    async function migrarPermissoesUsuarios() {
+        const usuariosAlterados = [];
         usuariosSistema.forEach(u => {
             if (u.ehAdmin) return;
             if (!u.permissoes) u.permissoes = {};
             const padrao = permissoesPadraoPorPapel(u.papel);
+            let mudouEsse = false;
             PERMISSOES_DISPONIVEIS.forEach(p => {
                 if (!(p.chave in u.permissoes)) {
                     u.permissoes[p.chave] = !!padrao[p.chave];
-                    mudou = true;
+                    mudouEsse = true;
                 }
             });
+            if (mudouEsse) usuariosAlterados.push(u.id);
         });
-        if (mudou) salvarUsuariosStorage();
+        if (usuariosAlterados.length) {
+            await Promise.all(usuariosAlterados.map(id => sincronizarUsuario(id)));
+        }
     }
 
     // =====================================================
@@ -19805,11 +19914,11 @@
         tabela.innerHTML = thead + `<tbody>${linhas}</tbody>`;
     }
 
-    function mapaPermissoesToggle(usuarioId, chave) {
+    async function mapaPermissoesToggle(usuarioId, chave) {
         const u = usuariosSistema.find(x => x.id === usuarioId);
         if (!u || u.ehAdmin) return;
         u.permissoes[chave] = !u.permissoes[chave];
-        salvarUsuariosStorage();
+        await sincronizarUsuario(usuarioId);
         mapaPermissoesRender();
     }
 
@@ -19977,7 +20086,7 @@
         return permissoes;
     }
 
-    function salvarUsuario() {
+    async function salvarUsuario() {
         const nome = document.getElementById('usuario-form-nome').value.trim();
         if (!nome) { alert('Informe o nome do usuário.'); return; }
 
@@ -20004,7 +20113,7 @@
             });
         }
 
-        salvarUsuariosStorage();
+        await sincronizarUsuario(usuarioEmEdicaoId || usuarioRecemCriadoId);
         fecharModalUsuario();
         contaRenderUsuarios();
 
@@ -20218,7 +20327,7 @@
 
     let conviteUsuarioIdAtual = null;
 
-    function concluirConviteUsuario() {
+    async function concluirConviteUsuario() {
         const senha = document.getElementById('convite-usuario-senha').value;
         const confirmar = document.getElementById('convite-usuario-senha-confirmar').value;
         const erroEl = document.getElementById('convite-usuario-erro-senha');
@@ -20242,7 +20351,7 @@
         // hash no backend quando ele existir.
         u.senha = senha;
         u.statusConta = 'ativo';
-        salvarUsuariosStorage();
+        await sincronizarUsuario(u.id);
 
         document.getElementById('convite-usuario-form-wrap').classList.add('hidden');
         document.getElementById('convite-usuario-sucesso').classList.remove('hidden');
@@ -20257,10 +20366,10 @@
             return;
         }
 
-        customConfirm('Remover usuário?', `${u.nome} vai pra lixeira e pode ser restaurado por até 10 dias.`, () => {
+        customConfirm('Remover usuário?', `${u.nome} vai pra lixeira e pode ser restaurado por até 10 dias.`, async () => {
             moverParaLixeira('usuario', u.nome, u);
             usuariosSistema = usuariosSistema.filter(x => x.id !== id);
-            salvarUsuariosStorage();
+            await excluirUsuarioSupabase(id);
             contaRenderUsuarios();
         }, 'Remover');
     }
@@ -20349,7 +20458,7 @@
         modal.classList.remove('active');
     }
 
-    function salvarFuncao() {
+    async function salvarFuncao() {
         const idExistente = document.getElementById('funcao-form-id').value;
         const nome = document.getElementById('funcao-form-nome').value.trim();
         const abrev = document.getElementById('funcao-form-abrev').value.trim().toUpperCase();
@@ -20368,7 +20477,7 @@
         const id = idExistente || ('funcao_' + Date.now());
         PAPEIS_USUARIO[id] = { nome, abrev, cor, protegida: false, permissoesPadrao };
 
-        salvarFuncoesStorage();
+        await sincronizarFuncao(id);
         fecharModalFuncao();
 
         usuarioFormRenderFuncoesSelect(id);
@@ -20376,7 +20485,7 @@
         renderSeletorMeuPapel();
     }
 
-    function excluirFuncao() {
+    async function excluirFuncao() {
         const id = document.getElementById('funcao-form-id').value;
         const funcao = PAPEIS_USUARIO[id];
         if (!funcao || funcao.protegida) return;
@@ -20386,9 +20495,9 @@
             return;
         }
 
-        customConfirm('Excluir função?', `A função "${funcao.nome}" será removida.`, () => {
+        customConfirm('Excluir função?', `A função "${funcao.nome}" será removida.`, async () => {
             delete PAPEIS_USUARIO[id];
-            salvarFuncoesStorage();
+            await excluirFuncaoSupabase(id);
             fecharModalFuncao();
             usuarioFormRenderFuncoesSelect('agencia');
             usuarioFormAtualizarPermissoesPadrao();
@@ -21143,17 +21252,20 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+        // Conexão com o Supabase primeiro — Eventos, Usuários e Funções
+        // dependem dela, e a checagem de rota de convite de usuário (logo
+        // abaixo) precisa que os usuários já estejam carregados.
+        const conectado = await testarConexaoSupabase();
+        if (!conectado) return;
+        await carregarEventosGerenciadosDoSupabase();
+        await carregarUsuariosEFuncoesDoSupabase();
+        iniciarRealtimeEventosGerenciados();
+        iniciarRealtimeUsuariosEFuncoes();
+
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
         const ehRotaEditarBanda = !ehRotaCadastroBanda && !ehRotaConviteUsuario && verificarRotaEditarBanda();
         if (ehRotaCadastroBanda || ehRotaConviteUsuario || ehRotaEditarBanda) return; // não precisa inicializar o painel interno
-
-        // Gestão de Eventos depende do Supabase — testa a conexão ANTES
-        // de mostrar qualquer coisa. Sem conexão, mostra erro e para aqui.
-        const conectado = await testarConexaoSupabase();
-        if (!conectado) return;
-        await carregarEventosGerenciadosDoSupabase();
-        iniciarRealtimeEventosGerenciados();
 
         carregarDatasEspeciaisPersonalizadas();
         carregarEquipamentosCasa();
@@ -21163,8 +21275,8 @@
         // Migrações e carregamento de dados — tudo isso roda ANTES de
         // qualquer render (inclusive o Dashboard), pra nenhuma tela
         // nascer com dado desatualizado ou faltando categoria nova.
-        migrarPermissoesPadraoFuncoes();
-        migrarPermissoesUsuarios();
+        await migrarPermissoesPadraoFuncoes();
+        await migrarPermissoesUsuarios();
 
         // Migração: converte chaves de função antigas ('agencia', 'redes'...)
         // em IDs de usuário ('user_002', 'user_004'...) nas demandas salvas.
