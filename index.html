@@ -11811,7 +11811,7 @@
 
         if (item.tipo === 'banda') {
             bandasPerfis[item.chaveOriginal] = item.dados;
-            salvarBandasPerfisStorage();
+            await sincronizarBanda(item.chaveOriginal);
         } else if (item.tipo === 'cliente') {
             clientes.push(item.dados);
             salvarClientesStorage();
@@ -12710,11 +12710,11 @@
         bandasRenderGrid();
     }
 
-    function bandaAprovar(id) {
+    async function bandaAprovar(id) {
         if (!bandasPerfis[id]) return;
         bandasPerfis[id].status = 'aprovada';
         delete bandasPerfis[id].motivoReprovacao;
-        salvarBandasPerfisStorage();
+        await sincronizarBanda(id);
         bandasRender();
         // Se estiver com o perfil dessa banda aberto, atualiza o topo também
         if (bandaAtualId === id && !document.getElementById('banda-perfil-page').classList.contains('hidden')) {
@@ -12724,10 +12724,10 @@
 
     function bandaReprovar(id) {
         if (!bandasPerfis[id]) return;
-        customPrompt('Motivo da reprovação', 'Ex: estilo musical não compatível...', (motivo) => {
+        customPrompt('Motivo da reprovação', 'Ex: estilo musical não compatível...', async (motivo) => {
             bandasPerfis[id].status = 'reprovada';
             bandasPerfis[id].motivoReprovacao = motivo;
-            salvarBandasPerfisStorage();
+            await sincronizarBanda(id);
             bandasRender();
             if (bandaAtualId === id && !document.getElementById('banda-perfil-page').classList.contains('hidden')) {
                 showBandaPerfil(id, bandaPerfilOrigem);
@@ -12764,7 +12764,7 @@
         }
     }
 
-    function salvarNovaBanda() {
+    async function salvarNovaBanda() {
         const nome = document.getElementById('novabanda-nome').value.trim();
         if (!nome) { alert('Informe o nome da banda.'); return; }
 
@@ -12787,7 +12787,7 @@
             anexos: []
         };
 
-        salvarBandasPerfisStorage();
+        await sincronizarBanda(novoId);
         fecharModalNovaBanda();
         bandasRender();
     }
@@ -12811,7 +12811,7 @@
         return false;
     }
 
-    function enviarCadastroPublicoBanda() {
+    async function enviarCadastroPublicoBanda() {
         const nome = document.getElementById('cadpub-nome').value.trim();
         const genero = generoObterValor('cadpub');
         const responsavel = document.getElementById('cadpub-responsavel').value.trim();
@@ -12852,7 +12852,7 @@
             dataCadastro: new Date().toISOString()
         };
 
-        salvarBandasPerfisStorage();
+        await sincronizarBanda(novoId);
 
         document.getElementById('cadastro-publico-form-wrap').classList.add('hidden');
         document.getElementById('cadastro-publico-sucesso').classList.remove('hidden');
@@ -14081,7 +14081,7 @@
         renderView();
     }
 
-    function salvarEdicoes() {
+    async function salvarEdicoes() {
         // Campos simples
         banda.nome = document.getElementById('edit-nome').value.trim();
         banda.genero = generoObterValor('edit');
@@ -14092,8 +14092,8 @@
         banda.cache  = document.getElementById('edit-cache').value.trim();
         banda.descricao = document.getElementById('edit-descricao').value.trim();
 
-        // Salvar no localStorage (todos os perfis, incluindo imagens)
-        salvarBandasPerfisStorage();
+        // Salvar no Supabase (todos os perfis, incluindo imagens)
+        await sincronizarBanda(bandaAtualId);
 
         modoEdicao = false;
         document.getElementById('banda-perfil-page').classList.remove('perfil-modo-edicao');
@@ -14459,13 +14459,13 @@
         if (e.target === document.getElementById('modal-excluir')) fecharModalExcluir();
     }
 
-    function confirmarExclusao() {
+    async function confirmarExclusao() {
         const banda = bandasPerfis[bandaAtualId];
         if (!banda) { fecharModalExcluir(); return; }
 
         moverParaLixeira('banda', banda.nome, banda, bandaAtualId);
         delete bandasPerfis[bandaAtualId];
-        salvarBandasPerfisStorage();
+        await excluirBandaSupabase(bandaAtualId);
 
         fecharModalExcluir();
         alert('Banda movida pra lixeira. Dá pra restaurar por até 10 dias.');
@@ -15071,6 +15071,74 @@
         });
         canal.subscribe((status, err) => {
             console.log('Realtime (usuários): status da inscrição:', status, err || '');
+        });
+    }
+
+    // =====================================================
+    //  BANDAS — mesmo padrão: sincronizadas com o Supabase.
+    //  Diferente de Eventos/Usuários, o perfil de banda é guardado
+    //  inteiro como um bloco JSON por banda (não em tabelas separadas),
+    //  porque a estrutura tem várias listas aninhadas (integrantes,
+    //  redes sociais, anexos) que não precisam de consulta relacional —
+    //  só precisam ir e voltar inteiras.
+    // =====================================================
+    async function carregarBandasDoSupabase() {
+        const { data, error } = await supabaseClient.from('bandas').select('*');
+        if (error) { mostrarErroConexaoSupabase(); return false; }
+
+        if (data.length === 0 && Object.keys(bandasPerfis).length > 0) {
+            await Promise.all(Object.keys(bandasPerfis).map(id => sincronizarBanda(id)));
+        } else {
+            Object.keys(bandasPerfis).forEach(id => delete bandasPerfis[id]);
+            data.forEach(row => { bandasPerfis[row.id] = row.dados; });
+        }
+        return true;
+    }
+
+    async function sincronizarBanda(bandaId) {
+        if (!supabaseClient || !bandasPerfis[bandaId]) return;
+        await supabaseClient.from('bandas').upsert({
+            id: bandaId, dados: bandasPerfis[bandaId], atualizado_em: new Date().toISOString()
+        });
+    }
+
+    async function excluirBandaSupabase(bandaId) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('bandas').delete().eq('id', bandaId);
+    }
+
+    let recarregandoBandas = false;
+    async function recarregarBandasERerenderizar() {
+        if (recarregandoBandas) return;
+        recarregandoBandas = true;
+        const ok = await carregarBandasDoSupabase();
+        recarregandoBandas = false;
+        if (!ok) return;
+
+        bandasRender();
+
+        // Se o perfil de alguma banda estiver aberto na tela, atualiza ele
+        // também — senão a pessoa fica vendo dado desatualizado ali.
+        const paginaPerfilAberta = document.getElementById('banda-perfil-page') && !document.getElementById('banda-perfil-page').classList.contains('hidden');
+        if (paginaPerfilAberta && bandaAtualId) {
+            if (bandasPerfis[bandaAtualId]) {
+                showBandaPerfil(bandaAtualId, bandaPerfilOrigem);
+            } else {
+                // A banda foi excluída em outro lugar enquanto essa pessoa
+                // olhava o perfil dela — volta pra lista, sem travar a tela.
+                changePage('bandas', document.getElementById('menu-item-bandas'));
+            }
+        }
+    }
+
+    function iniciarRealtimeBandas() {
+        if (!supabaseClient) return;
+        const canal = supabaseClient.channel('bandas-realtime');
+        canal.on('postgres_changes', { event: '*', schema: 'public', table: 'bandas' }, () => {
+            recarregarBandasERerenderizar();
+        });
+        canal.subscribe((status, err) => {
+            console.log('Realtime (bandas): status da inscrição:', status, err || '');
         });
     }
 
@@ -20266,7 +20334,7 @@
         leitor.readAsDataURL(file);
     }
 
-    function salvarEdicaoPublicaBanda() {
+    async function salvarEdicaoPublicaBanda() {
         const banda = bandasPerfis[editarBandaIdAtual];
         if (!banda) return;
 
@@ -20293,7 +20361,7 @@
             fotoPerfil: editarBandaFotoBase64
         });
 
-        try { salvarBandasPerfisStorage(); } catch(e) {}
+        try { await sincronizarBanda(editarBandaIdAtual); } catch(e) {}
 
         document.getElementById('editarbanda-form-wrap').classList.add('hidden');
         document.getElementById('editarbanda-sucesso').classList.remove('hidden');
@@ -21256,15 +21324,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
-        // Conexão com o Supabase primeiro — Eventos, Usuários e Funções
-        // dependem dela, e a checagem de rota de convite de usuário (logo
-        // abaixo) precisa que os usuários já estejam carregados.
+        // Conexão com o Supabase primeiro — Eventos, Usuários, Funções e
+        // Bandas dependem dela, e as checagens de rota logo abaixo (convite
+        // de usuário, editar banda) precisam que os dados já estejam
+        // carregados antes de rodar.
         const conectado = await testarConexaoSupabase();
         if (!conectado) return;
         await carregarEventosGerenciadosDoSupabase();
         await carregarUsuariosEFuncoesDoSupabase();
+        await carregarBandasDoSupabase();
         iniciarRealtimeEventosGerenciados();
         iniciarRealtimeUsuariosEFuncoes();
+        iniciarRealtimeBandas();
 
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
