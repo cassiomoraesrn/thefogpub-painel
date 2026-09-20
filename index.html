@@ -15236,6 +15236,99 @@
         });
     }
 
+    // =====================================================
+    //  KANBAN / MARKETING — demandas e quadros, sincronizados com o
+    //  Supabase. Demandas guardam o perfil inteiro como bloco JSON
+    //  (comentários e arquivos anexados são aninhados); quadros são uma
+    //  tabela simples de colunas.
+    //
+    //  Estratégia diferente das anteriores: em vez de trocar cada uma
+    //  das dezenas de chamadas de salvarDemandasStorage() espalhadas
+    //  pelo código, a própria função foi reescrita pra sincronizar tudo
+    //  de uma vez (upsert em lote) sempre que for chamada — assim nenhum
+    //  dos pontos de chamada precisou ser tocado, só a definição dela.
+    //  Exclusão de demanda é o único caso que precisa de uma chamada
+    //  própria (upsert não apaga o que não está mais no array local).
+    // =====================================================
+    async function carregarDemandasEQuadrosDoSupabase() {
+        const [demandasR, quadrosR] = await Promise.all([
+            supabaseClient.from('demandas').select('*'),
+            supabaseClient.from('quadros_kanban').select('*')
+        ]);
+        if (demandasR.error || quadrosR.error) { mostrarErroConexaoSupabase(); return false; }
+
+        if (demandasR.data.length === 0 && demandas.length > 0) {
+            await sincronizarTodasDemandas();
+        } else {
+            demandas = demandasR.data.map(row => row.dados);
+        }
+
+        if (quadrosR.data.length === 0 && quadrosKanban.length > 0) {
+            await sincronizarTodosQuadros();
+        } else {
+            quadrosKanban = quadrosR.data.map(row => ({
+                id: row.id, nome: row.nome, eventoId: row.evento_id, protegido: row.protegido
+            }));
+            if (!quadrosKanban.some(q => q.id === 'dia-a-dia')) {
+                quadrosKanban.unshift({ id: 'dia-a-dia', nome: 'Dia a dia', eventoId: null, protegido: true });
+            }
+        }
+        return true;
+    }
+
+    async function sincronizarTodasDemandas() {
+        if (!supabaseClient || demandas.length === 0) return;
+        const linhas = demandas.map(d => ({ id: d.id, dados: d, atualizado_em: new Date().toISOString() }));
+        await supabaseClient.from('demandas').upsert(linhas);
+    }
+
+    async function excluirDemandaSupabase(demandaId) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('demandas').delete().eq('id', demandaId);
+    }
+
+    async function sincronizarTodosQuadros() {
+        if (!supabaseClient || quadrosKanban.length === 0) return;
+        const linhas = quadrosKanban.map(q => ({ id: q.id, nome: q.nome, evento_id: q.eventoId, protegido: !!q.protegido }));
+        await supabaseClient.from('quadros_kanban').upsert(linhas);
+    }
+
+    let recarregandoDemandasEQuadros = false;
+    async function recarregarDemandasEQuadrosERerenderizar() {
+        if (recarregandoDemandasEQuadros) return;
+        recarregandoDemandasEQuadros = true;
+        const ok = await carregarDemandasEQuadrosDoSupabase();
+        recarregandoDemandasEQuadros = false;
+        if (!ok) return;
+
+        atualizarBadgeMarketing();
+        kanbanRender();
+
+        // Se tiver o modal de alguma demanda específica aberto, atualiza
+        // ele também — senão a pessoa vê comentário/status desatualizado.
+        const modalDemandaAberto = document.getElementById('modal-demanda') && document.getElementById('modal-demanda').classList.contains('active');
+        if (modalDemandaAberto && demandaAtualId) {
+            if (demandas.find(d => d.id === demandaAtualId)) {
+                abrirModalDemanda(demandaAtualId);
+            } else {
+                fecharModalDemanda();
+            }
+        }
+    }
+
+    function iniciarRealtimeDemandasEQuadros() {
+        if (!supabaseClient) return;
+        const canal = supabaseClient.channel('demandas-realtime');
+        ['demandas', 'quadros_kanban'].forEach(tabela => {
+            canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela }, () => {
+                recarregarDemandasEQuadrosERerenderizar();
+            });
+        });
+        canal.subscribe((status, err) => {
+            console.log('Realtime (demandas/quadros): status da inscrição:', status, err || '');
+        });
+    }
+
     function eventoNomeExibicao(evento) {
         return evento.nomeEvento || evento.bandas.map(b => nomeBandaPorId(b.bandaId)).join(' + ') || 'Evento';
     }
@@ -17547,8 +17640,8 @@
     } catch(e) {}
 
 
-    function salvarDemandasStorage() {
-        try { localStorage.setItem(storageKey('demandas'), JSON.stringify(demandas)); } catch(e) {}
+    async function salvarDemandasStorage() {
+        await sincronizarTodasDemandas();
         atualizarBadgeMarketing();
     }
 
@@ -17648,8 +17741,8 @@
 
     let kanbanQuadroAtual = 'dia-a-dia';
 
-    function salvarQuadrosKanbanStorage() {
-        try { localStorage.setItem(storageKey('quadrosKanban'), JSON.stringify(quadrosKanban)); } catch(e) {}
+    async function salvarQuadrosKanbanStorage() {
+        await sincronizarTodosQuadros();
     }
 
     function kanbanTrocarQuadro(quadroId) {
@@ -18475,14 +18568,16 @@
         document.getElementById('modal-excluir-demanda').classList.add('hidden');
     }
 
-    function confirmarExclusaoDemanda() {
+    async function confirmarExclusaoDemanda() {
         if (!demandaAtualId) {
             console.error('[EXCLUIR] ERRO: demandaAtualId vazio!');
             return;
         }
-        
-        demandas = demandas.filter(d => d.id !== demandaAtualId);
-        salvarDemandasStorage();
+
+        const idParaExcluir = demandaAtualId;
+        demandas = demandas.filter(d => d.id !== idParaExcluir);
+        await excluirDemandaSupabase(idParaExcluir);
+        atualizarBadgeMarketing();
         fecharModalExcluirDemanda();
         fecharModalDemanda();
         kanbanRender();
@@ -21428,10 +21523,12 @@
         await carregarUsuariosEFuncoesDoSupabase();
         await carregarBandasDoSupabase();
         await carregarClientesDoSupabase();
+        await carregarDemandasEQuadrosDoSupabase();
         iniciarRealtimeEventosGerenciados();
         iniciarRealtimeUsuariosEFuncoes();
         iniciarRealtimeBandas();
         iniciarRealtimeClientes();
+        iniciarRealtimeDemandasEQuadros();
 
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
@@ -21451,7 +21548,7 @@
 
         // Migração: converte chaves de função antigas ('agencia', 'redes'...)
         // em IDs de usuário ('user_002', 'user_004'...) nas demandas salvas.
-        (function migrarUsuariosAtribuidos() {
+        await (async function migrarUsuariosAtribuidos() {
             const chavesDeFuncao = Object.keys(PAPEIS_USUARIO);
             let precisaMigrar = false;
             demandas.forEach(d => {
@@ -21465,7 +21562,7 @@
                 });
             });
             if (precisaMigrar) {
-                try { localStorage.setItem(storageKey('demandas'), JSON.stringify(demandas)); } catch(e) {}
+                await sincronizarTodasDemandas();
             }
         })();
 
