@@ -15054,7 +15054,11 @@
         const ok = await carregarUsuariosEFuncoesDoSupabase();
         recarregandoUsuariosEFuncoes = false;
         if (!ok) return;
+        // Ambas as visões da página de Usuários (lista de perfis e mapa de
+        // permissões) precisam atualizar — cada função já se protege
+        // sozinha (não faz nada se o elemento dela não estiver na tela).
         contaRenderUsuarios();
+        mapaPermissoesRender();
     }
 
     function iniciarRealtimeUsuariosEFuncoes() {
