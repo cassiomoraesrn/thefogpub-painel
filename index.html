@@ -14774,7 +14774,7 @@
     //  dali como ponto de partida).
     // =====================================================
     const SUPABASE_URL = 'https://pqeriwuyspvfpbqmhzwd.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_XVMwSvuW1JPghVxA9bj7kw_Y_l0JosN';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxZXJpd3V5c3B2ZnBicW1oendkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MDM0NzQsImV4cCI6MjEwNTQ3OTQ3NH0.k2ZH5tcLNaswFRPZFK5kapx0k30vboWC4CuedYNe9Bo';
     let supabaseClient = null;
     try {
         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -14791,9 +14791,14 @@
     async function testarConexaoSupabase() {
         try {
             const { error } = await supabaseClient.from('eventos').select('id').limit(1);
-            if (error) { mostrarErroConexaoSupabase(); return false; }
+            if (error) {
+                console.error('Erro de conexão com o Supabase:', error);
+                mostrarErroConexaoSupabase();
+                return false;
+            }
             return true;
         } catch (e) {
+            console.error('Exceção ao conectar com o Supabase:', e);
             mostrarErroConexaoSupabase();
             return false;
         }
