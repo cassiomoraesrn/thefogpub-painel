@@ -10100,6 +10100,18 @@
                             <span>Patrocínios &amp; Parcerias</span>
                         </button>
 
+                        <div class="evento-gestao-nav-grupo" id="evento-gestao-nav-ingressos-grupo">
+                            <button type="button" class="evento-gestao-nav-item evento-gestao-nav-grupo-titulo" id="evento-gestao-tab-ingressos" onclick="eventoGestaoToggleIngressosGrupo()" title="Ingressos">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a3 3 0 0 0 3-3h12a3 3 0 0 0 3 3v6a3 3 0 0 0-3 3H6a3 3 0 0 0-3-3z"></path><circle cx="12" cy="12" r="2"></circle></svg>
+                                <span>Ingressos</span>
+                                <svg class="evento-gestao-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="evento-gestao-nav-subitens" id="evento-gestao-nav-ingressos-subitens">
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="ingressos-lotes" onclick="eventoGestaoTrocarAba('ingressos-lotes', this)">Lotes de ingresso</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="ingressos-pedidos" onclick="eventoGestaoTrocarAba('ingressos-pedidos', this)">Pedidos</button>
+                            </div>
+                        </div>
+
                         <div class="evento-gestao-nav-grupo" id="evento-gestao-nav-financeiro-grupo">
                             <button type="button" class="evento-gestao-nav-item evento-gestao-nav-grupo-titulo" id="evento-gestao-tab-financeiro" onclick="eventoGestaoToggleFinanceiroGrupo()" title="Financeiro">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -10108,8 +10120,6 @@
                             </button>
                             <div class="evento-gestao-nav-subitens" id="evento-gestao-nav-financeiro-subitens">
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-resumo" onclick="eventoGestaoTrocarAba('financeiro-resumo', this)">Resumo</button>
-                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-lotes" onclick="eventoGestaoTrocarAba('financeiro-lotes', this)">Lotes de ingresso</button>
-                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-pedidos" onclick="eventoGestaoTrocarAba('financeiro-pedidos', this)">Pedidos</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-receita" onclick="eventoGestaoTrocarAba('financeiro-receita', this)">Receitas</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-custo_fixo" onclick="eventoGestaoTrocarAba('financeiro-custo_fixo', this)">Custos fixos</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-custo_variavel" onclick="eventoGestaoTrocarAba('financeiro-custo_variavel', this)">Custos variáveis</button>
@@ -10187,7 +10197,7 @@
                         </div>
 
                         <!-- FINANCEIRO: LOTES DE INGRESSO -->
-                        <div id="evento-gestao-view-financeiro-lotes" class="marketing-view hidden">
+                        <div id="evento-gestao-view-ingressos-lotes" class="marketing-view hidden">
                             <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
                                 <p>Cadastre os lotes pra poder vincular a venda a cada um deles no lançamento de receita.</p>
                             </div>
@@ -10199,7 +10209,7 @@
                         </div>
 
                         <!-- FINANCEIRO: PEDIDOS DE INGRESSO -->
-                        <div id="evento-gestao-view-financeiro-pedidos" class="marketing-view hidden">
+                        <div id="evento-gestao-view-ingressos-pedidos" class="marketing-view hidden">
                             <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
                                 <p>Quem reservou ou comprou ingresso — pela página pública do evento, ou lançado manualmente aqui (venda por telefone, PIX direto, etc).</p>
                             </div>
@@ -16419,11 +16429,14 @@
 
         const grupoFinanceiro = document.getElementById('evento-gestao-nav-financeiro-grupo');
         if (grupoFinanceiro) grupoFinanceiro.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
+        const grupoIngressos = document.getElementById('evento-gestao-nav-ingressos-grupo');
+        if (grupoIngressos) grupoIngressos.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
 
         eventoGestaoAbaAtual = 'programacao';
         document.querySelectorAll('#evento-gestao-page .evento-gestao-nav-item, #evento-gestao-page .evento-gestao-nav-subitem').forEach(t => t.classList.remove('active'));
         document.querySelector('#evento-gestao-page .evento-gestao-nav-item[data-view="programacao"]').classList.add('active');
         if (grupoFinanceiro) grupoFinanceiro.classList.remove('aberto');
+        if (grupoIngressos) grupoIngressos.classList.remove('aberto');
         document.querySelectorAll('#evento-gestao-page .marketing-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('evento-gestao-view-programacao').classList.remove('hidden');
 
@@ -16468,6 +16481,10 @@
         reader.readAsDataURL(file);
     }
 
+    // Grupos expansíveis da sidebar do evento (Financeiro, Ingressos...).
+    // Adicionar um novo grupo no futuro é só incluir o prefixo aqui.
+    const EVENTO_GESTAO_GRUPOS = ['financeiro', 'ingressos'];
+
     function eventoGestaoTrocarAba(aba, btn) {
         eventoGestaoAbaAtual = aba;
         document.querySelectorAll('#evento-gestao-page .evento-gestao-nav-item, #evento-gestao-page .evento-gestao-nav-subitem').forEach(t => t.classList.remove('active'));
@@ -16475,19 +16492,31 @@
         document.querySelectorAll('#evento-gestao-page .marketing-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('evento-gestao-view-' + aba).classList.remove('hidden');
 
-        // Se for uma sub-página do Financeiro, garante que o grupo
-        // esteja aberto e o botão "Financeiro" pareça selecionado.
-        const grupoFinanceiro = document.getElementById('evento-gestao-nav-financeiro-grupo');
-        if (aba.startsWith('financeiro-')) {
-            grupoFinanceiro.classList.add('aberto');
-            document.getElementById('evento-gestao-tab-financeiro').classList.add('active');
-        } else {
-            document.getElementById('evento-gestao-tab-financeiro').classList.remove('active');
-        }
+        // Se for uma sub-página de um grupo (Financeiro, Ingressos...),
+        // garante que o grupo esteja aberto e o botão dele pareça selecionado.
+        EVENTO_GESTAO_GRUPOS.forEach(grupoId => {
+            const grupo = document.getElementById(`evento-gestao-nav-${grupoId}-grupo`);
+            const tab = document.getElementById(`evento-gestao-tab-${grupoId}`);
+            if (!grupo || !tab) return;
+            if (aba.startsWith(grupoId + '-')) {
+                grupo.classList.add('aberto');
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
     }
 
     function eventoGestaoToggleFinanceiroGrupo() {
-        const grupo = document.getElementById('evento-gestao-nav-financeiro-grupo');
+        eventoGestaoToggleGrupo('financeiro');
+    }
+
+    function eventoGestaoToggleIngressosGrupo() {
+        eventoGestaoToggleGrupo('ingressos');
+    }
+
+    function eventoGestaoToggleGrupo(grupoId) {
+        const grupo = document.getElementById(`evento-gestao-nav-${grupoId}-grupo`);
         const sidebar = document.getElementById('evento-gestao-sidebar');
         // Se a sidebar estiver recolhida, o clique no grupo já expande ela
         // de volta — clicar num ícone sozinho e nada acontecer confundiria.
