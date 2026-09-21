@@ -822,6 +822,40 @@
             padding: 28px 16px 20px;
             box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1), inset -1px 0 0 rgba(201, 168, 118, 0.12);
             position: relative;
+            transition: width 0.2s ease;
+        }
+
+        .sidebar.recolhida { width: 76px; }
+
+        .sidebar-toggle-principal {
+            position: absolute;
+            top: 34px;
+            right: -12px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--brown);
+            color: #fff;
+            border: 2px solid var(--white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 5;
+            padding: 0;
+        }
+        .sidebar-toggle-principal svg { transition: transform 0.2s ease; display: block; }
+        .sidebar.recolhida .sidebar-toggle-principal svg { transform: rotate(180deg); }
+
+        .sidebar.recolhida .sidebar-logo h2 { font-size: 0; }
+        .sidebar.recolhida .menu-section-header { display: none; }
+        .sidebar.recolhida .menu-item { font-size: 0; justify-content: center; padding-left: 0; padding-right: 0; }
+        .sidebar.recolhida .sidebar-suporte-label { display: none; }
+        .sidebar.recolhida .sidebar-suporte-btn { justify-content: center; }
+        .sidebar.recolhida .sidebar-user { display: none; }
+
+        @media (max-width: 900px) {
+            .sidebar-toggle-principal { display: none; }
         }
 
         .sidebar-logo {
@@ -8627,10 +8661,13 @@
             <div class="sidebar-logo">
                 <h2>The Fog Pub</h2>
             </div>
+            <button class="sidebar-toggle-principal" onclick="toggleSidebarPrincipal()" title="Recolher menu">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
 
             <div class="sidebar-menu">
                 <!-- DASHBOARD (isolado) -->
-                <button class="menu-item active" id="menu-item-dashboard" onclick="changePage('dashboard', this)">
+                <button class="menu-item active" id="menu-item-dashboard" title="Dashboard" onclick="changePage('dashboard', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="12 3 20 7.5 20 16.5 12 21 4 16.5 4 7.5 12 3"></polyline>
@@ -8644,7 +8681,7 @@
 
                 <!-- SEÇÃO: SISTEMAS -->
                 <div class="menu-section-header">Sistemas</div>
-                <button class="menu-item menu-subitem" id="menu-item-bandas" onclick="changePage('bandas', this)">
+                <button class="menu-item menu-subitem" id="menu-item-bandas" title="Bandas" onclick="changePage('bandas', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -8655,7 +8692,7 @@
                     </div>
                     Bandas
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-agenda" onclick="changePage('agenda', this)">
+                <button class="menu-item menu-subitem" id="menu-item-agenda" title="Agenda" onclick="changePage('agenda', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -8666,7 +8703,7 @@
                     </div>
                     Agenda
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-eventos" onclick="changePage('eventos', this)">
+                <button class="menu-item menu-subitem" id="menu-item-eventos" title="Eventos" onclick="changePage('eventos', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2l2.4 7.2H22l-6 4.6 2.3 7.2-6.3-4.6-6.3 4.6 2.3-7.2-6-4.6h7.6z"></path>
@@ -8674,7 +8711,7 @@
                     </div>
                     Eventos
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-marketing" onclick="changePage('marketing', this)">
+                <button class="menu-item menu-subitem" id="menu-item-marketing" title="Marketing" onclick="changePage('marketing', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 4v6h6"></path>
@@ -8686,7 +8723,7 @@
                     Marketing
                     <span class="menu-badge hidden" id="marketing-menu-badge">0</span>
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-clientes" onclick="changePage('clientes', this)">
+                <button class="menu-item menu-subitem" id="menu-item-clientes" title="Clientes" onclick="changePage('clientes', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
@@ -8700,7 +8737,7 @@
 
                 <!-- SEÇÃO: MINHA CONTA -->
                 <div class="menu-section-header">Minha Conta</div>
-                <button class="menu-item menu-subitem" id="menu-item-meus-dados" onclick="changePage('meus-dados', this)">
+                <button class="menu-item menu-subitem" id="menu-item-meus-dados" title="Meus Dados" onclick="changePage('meus-dados', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -8709,7 +8746,7 @@
                     </div>
                     Meus Dados
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-usuarios" onclick="changePage('usuarios', this)">
+                <button class="menu-item menu-subitem" id="menu-item-usuarios" title="Usuários" onclick="changePage('usuarios', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -8720,7 +8757,7 @@
                     </div>
                     Usuários
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-integracoes" onclick="changePage('integracoes', this)">
+                <button class="menu-item menu-subitem" id="menu-item-integracoes" title="Integrações" onclick="changePage('integracoes', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="9" y="9" width="6" height="6"></rect>
@@ -8729,7 +8766,7 @@
                     </div>
                     Integrações
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-lixeira" onclick="changePage('lixeira', this)">
+                <button class="menu-item menu-subitem" id="menu-item-lixeira" title="Lixeira" onclick="changePage('lixeira', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -15327,6 +15364,10 @@
         document.getElementById('sidebar-overlay-mobile').classList.remove('ativo');
     }
 
+    function toggleSidebarPrincipal() {
+        document.getElementById('sidebar-principal').classList.toggle('recolhida');
+    }
+
     function changePage(pageName, button) {
         // Trava de verdade: se a página exige uma permissão que o usuário
         // não tem, cancela a navegação (cobre clique no menu escondido
@@ -16302,8 +16343,37 @@
                         <div class="usuario-item-detalhe">${(e.programacao || []).length} item${(e.programacao || []).length !== 1 ? 's' : ''} na programação · ${(e.patrocinios || []).length} patrocínio${(e.patrocinios || []).length !== 1 ? 's' : ''}</div>
                     </div>
                     ${temPermissao('verFinanceiroEvento') ? `<span class="cliente-item-idade-badge" style="background:${lucro >= 0 ? '#DCFCE7' : '#FEE2E2'}; color:${lucro >= 0 ? '#166534' : '#991B1B'};">${formatarMoeda(lucro)}</span>` : ''}
+                    ${temPermissao('gerenciarEventos') ? `<button class="btn-icon-acao excluir" onclick="event.stopPropagation(); excluirEventoGerenciado('${e.id}')" title="Excluir evento">${ICONE_EXCLUIR}</button>` : ''}
                 </div>`;
         }).join('');
+    }
+
+    async function excluirEventoGerenciado(id) {
+        const evento = eventosGerenciados.find(e => e.id === id);
+        if (!evento) return;
+
+        customConfirm(
+            `Excluir "${eventoNomeExibicao(evento)}"?`,
+            'Isso apaga programação, checklist, fornecedores, equipe, patrocínios, lotes de ingresso, pedidos e lançamentos financeiros desse evento. Não pode ser desfeito.',
+            async () => {
+                eventosGerenciados = eventosGerenciados.filter(e => e.id !== id);
+                if (supabaseClient) {
+                    // Filhos saem sozinhos por cascata no banco — só
+                    // precisa apagar a linha do evento em si, e o quadro
+                    // do Kanban (que vive numa tabela separada, sem cascata).
+                    await supabaseClient.from('eventos').delete().eq('id', id);
+                    if (evento.quadroKanbanId) {
+                        await supabaseClient.from('quadros_kanban').delete().eq('id', evento.quadroKanbanId);
+                    }
+                }
+                quadrosKanban = quadrosKanban.filter(q => q.id !== evento.quadroKanbanId);
+
+                eventosGerenciadosRender();
+                dashboardRender();
+                if (typeof kanbanRender === 'function') kanbanRender();
+            },
+            'Excluir'
+        );
     }
 
     function abrirModalPromoverEvento() {
