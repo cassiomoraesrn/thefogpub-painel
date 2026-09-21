@@ -7503,7 +7503,7 @@
             overflow-x: auto;
         }
 
-        .marketing-tab {
+        .marketing-tab, .eventos-tab-principal {
             display: flex;
             align-items: center;
             gap: 7px;
@@ -7519,12 +7519,12 @@
             white-space: nowrap;
         }
 
-        .marketing-tab:hover {
+        .marketing-tab:hover, .eventos-tab-principal:hover {
             background: var(--beige);
             border-color: var(--brown);
         }
 
-        .marketing-tab.active {
+        .marketing-tab.active, .eventos-tab-principal.active {
             background: var(--brown);
             border-color: var(--brown);
             color: white;
@@ -8692,17 +8692,6 @@
                     </div>
                     Bandas
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-agenda" title="Agenda" onclick="changePage('agenda', this)">
-                    <div class="menu-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                    </div>
-                    Agenda
-                </button>
                 <button class="menu-item menu-subitem" id="menu-item-eventos" title="Eventos" onclick="changePage('eventos', this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -9320,124 +9309,6 @@
             </div>
 
             <!-- AGENDA -->
-            <div id="agenda-page" class="page-content hidden">
-                <div class="content-header">
-                    <h1>Agenda de Eventos</h1>
-                    <p>Organize seus shows, datas de conteúdo e datas especiais</p>
-                </div>
-
-                <!-- SUB-NAVEGAÇÃO DO MÓDULO AGENDA -->
-                <div class="marketing-tabs">
-                    <button type="button" class="marketing-tab active" data-view="semana" onclick="agendaTrocarView('semana', this)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span>Semana</span>
-                    </button>
-                    <button type="button" class="marketing-tab" data-view="calendario" onclick="agendaTrocarView('calendario', this)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                            <path d="M8 14h2M14 14h2M8 18h2M14 18h2"></path>
-                        </svg>
-                        <span>Calendário Editorial</span>
-                    </button>
-                    <button type="button" class="marketing-tab" data-view="datas" onclick="agendaTrocarView('datas', this)">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="8" x2="12" y2="12"></line>
-                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                        </svg>
-                        <span>Datas Especiais</span>
-                    </button>
-                </div>
-
-                <!-- VIEW: SEMANA -->
-                <div id="agenda-view-semana" class="marketing-view">
-                    <!-- Toolbar: navegação de período + toggle semana/mês + novo evento -->
-                    <div class="agenda-toolbar">
-                        <div class="agenda-nav">
-                            <button class="agenda-nav-btn" onclick="agendaNavegar(-1)" title="Anterior">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="15 18 9 12 15 6"></polyline>
-                                </svg>
-                            </button>
-                            <button class="agenda-hoje-btn" onclick="agendaIrParaHoje()">Hoje</button>
-                            <span class="agenda-periodo-label" id="agenda-periodo-label">--</span>
-                            <button class="agenda-nav-btn" onclick="agendaNavegar(1)" title="Próximo">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="9 18 15 12 9 6"></polyline>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="agenda-acoes">
-                            <button class="add-button" id="btn-novo-evento" onclick="abrirFormEvento()">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                Novo Evento
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="agenda-view-semana-container" class="agenda-semana-grid"></div>
-                </div>
-
-                <!-- VIEW: CALENDÁRIO EDITORIAL -->
-                <div id="agenda-view-calendario" class="marketing-view hidden">
-                    <div class="agenda-toolbar">
-                        <div class="agenda-nav">
-                            <button class="agenda-nav-btn" onclick="calendarioEditorialNavegar(-1)" title="Anterior">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="15 18 9 12 15 6"></polyline>
-                                </svg>
-                            </button>
-                            <button class="agenda-hoje-btn" onclick="calendarioEditorialHoje()">Hoje</button>
-                            <span class="agenda-periodo-label" id="calendario-editorial-periodo-label">--</span>
-                            <button class="agenda-nav-btn" onclick="calendarioEditorialNavegar(1)" title="Próximo">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="9 18 15 12 9 6"></polyline>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="editorial-legenda">
-                            <span><i class="editorial-ponto editorial-ponto-briefing"></i> Briefing</span>
-                            <span><i class="editorial-ponto editorial-ponto-producao"></i> Produção</span>
-                            <span><i class="editorial-ponto editorial-ponto-aprovacao"></i> Aprovação</span>
-                            <span><i class="editorial-ponto editorial-ponto-aprovada"></i> Aprovada</span>
-                            <span><i class="editorial-ponto editorial-ponto-publicada"></i> Publicada</span>
-                        </div>
-                    </div>
-                    <div id="calendario-editorial-mes-container" class="agenda-mes-container"></div>
-                </div>
-
-                <!-- VIEW: DATAS ESPECIAIS -->
-                <div id="agenda-view-datas" class="marketing-view hidden">
-                    <div class="datas-especiais-header-acao">
-                        <div>
-                            <div class="aparencia-bloco-titulo">Datas personalizadas</div>
-                            <div class="aparencia-bloco-sub">Além dos feriados nacionais e datas comemorativas padrão, cadastre datas próprias do seu negócio — ex: aniversário da casa, noite temática fixa, promoção recorrente. Elas aparecem automaticamente na Semana e no Calendário Editorial.</div>
-                        </div>
-                        <button class="btn-upload" onclick="abrirModalDataEspecial()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Nova data
-                        </button>
-                    </div>
-                    <div class="datas-especiais-stats" id="datas-especiais-stats"></div>
-                    <div class="datas-especiais-lista" id="datas-especiais-lista">
-                        <!-- Preenchido via JS: datasEspeciaisPersonalizadasRender() -->
-                    </div>
-                </div>
-
-            </div>
 
             <!-- PÁGINA: DETALHE DO EVENTO -->
             <div id="evento-detalhe-page" class="page-content hidden">
@@ -9728,6 +9599,45 @@
                         </svg>
                         <span>Padrões</span>
                     </button>
+                    <button type="button" class="marketing-tab" data-view="calendario" onclick="marketingTrocarView('calendario', this)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                            <path d="M8 14h2M14 14h2M8 18h2M14 18h2"></path>
+                        </svg>
+                        <span>Calendário Editorial</span>
+                    </button>
+                </div>
+
+                <!-- VIEW: CALENDÁRIO EDITORIAL (movido de dentro da Agenda —
+                     é sobre status de conteúdo de marketing, não sobre shows) -->
+                <div id="marketing-view-calendario" class="marketing-view hidden">
+                    <div class="agenda-toolbar">
+                        <div class="agenda-nav">
+                            <button class="agenda-nav-btn" onclick="calendarioEditorialNavegar(-1)" title="Anterior">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <button class="agenda-hoje-btn" onclick="calendarioEditorialHoje()">Hoje</button>
+                            <span class="agenda-periodo-label" id="calendario-editorial-periodo-label">--</span>
+                            <button class="agenda-nav-btn" onclick="calendarioEditorialNavegar(1)" title="Próximo">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="editorial-legenda">
+                            <span><i class="editorial-ponto editorial-ponto-briefing"></i> Briefing</span>
+                            <span><i class="editorial-ponto editorial-ponto-producao"></i> Produção</span>
+                            <span><i class="editorial-ponto editorial-ponto-aprovacao"></i> Aprovação</span>
+                            <span><i class="editorial-ponto editorial-ponto-aprovada"></i> Aprovada</span>
+                            <span><i class="editorial-ponto editorial-ponto-publicada"></i> Publicada</span>
+                        </div>
+                    </div>
+                    <div id="calendario-editorial-mes-container" class="agenda-mes-container"></div>
                 </div>
 
                 <!-- VIEW: KANBAN (Produção) -->
@@ -10012,32 +9922,130 @@
             <!-- PÁGINA: LISTA DE EVENTOS GERENCIADOS -->
             <div id="eventos-page" class="page-content hidden">
                 <div class="content-header">
-                    <h1>Gestão de Eventos</h1>
-                    <p>Eventos grandes com programação, patrocínio e financeiro próprios — separados da Agenda do dia a dia</p>
+                    <h1>Eventos</h1>
+                    <p>Agenda do dia a dia e a gestão completa dos eventos grandes, tudo num só lugar</p>
                 </div>
 
-                <div class="bandas-header">
-                    <div></div>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button class="btn-upload" id="btn-criar-evento-direto" onclick="abrirModalCriarEventoDireto()">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <div class="marketing-tabs">
+                    <button type="button" class="eventos-tab-principal active" onclick="eventosTrocarAbaPrincipal('calendario', this)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        <span>Calendário</span>
+                    </button>
+                    <button type="button" class="eventos-tab-principal" onclick="eventosTrocarAbaPrincipal('gestao', this)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.3 6.9.9-5 4.9 1.2 6.9-6-3.2-6 3.2 1.2-6.9-5-4.9 6.9-.9L12 2z"></path></svg>
+                        <span>Gestão completa</span>
+                    </button>
+                </div>
+
+                <div id="eventos-painel-calendario" class="eventos-painel-principal">
+            <div id="agenda-page" >
+                <div class="content-header">
+                    <h1>Agenda de Eventos</h1>
+                    <p>Organize seus shows, datas de conteúdo e datas especiais</p>
+                </div>
+
+                <!-- SUB-NAVEGAÇÃO DO MÓDULO AGENDA -->
+                <div class="marketing-tabs">
+                    <button type="button" class="marketing-tab active" data-view="semana" onclick="agendaTrocarView('semana', this)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span>Semana</span>
+                    </button>
+                    <button type="button" class="marketing-tab" data-view="datas" onclick="agendaTrocarView('datas', this)">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>Datas Especiais</span>
+                    </button>
+                </div>
+
+                <!-- VIEW: SEMANA -->
+                <div id="agenda-view-semana" class="marketing-view">
+                    <!-- Toolbar: navegação de período + toggle semana/mês + novo evento -->
+                    <div class="agenda-toolbar">
+                        <div class="agenda-nav">
+                            <button class="agenda-nav-btn" onclick="agendaNavegar(-1)" title="Anterior">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <button class="agenda-hoje-btn" onclick="agendaIrParaHoje()">Hoje</button>
+                            <span class="agenda-periodo-label" id="agenda-periodo-label">--</span>
+                            <button class="agenda-nav-btn" onclick="agendaNavegar(1)" title="Próximo">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="agenda-acoes">
+                            <button class="add-button" id="btn-novo-evento" onclick="abrirFormEvento()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Novo Evento
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="agenda-view-semana-container" class="agenda-semana-grid"></div>
+                </div>
+
+                <!-- VIEW: CALENDÁRIO EDITORIAL -->
+                <!-- VIEW: DATAS ESPECIAIS -->
+                <div id="agenda-view-datas" class="marketing-view hidden">
+                    <div class="datas-especiais-header-acao">
+                        <div>
+                            <div class="aparencia-bloco-titulo">Datas personalizadas</div>
+                            <div class="aparencia-bloco-sub">Além dos feriados nacionais e datas comemorativas padrão, cadastre datas próprias do seu negócio — ex: aniversário da casa, noite temática fixa, promoção recorrente. Elas aparecem automaticamente na Semana e no Calendário Editorial.</div>
+                        </div>
+                        <button class="btn-upload" onclick="abrirModalDataEspecial()">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
-                            Criar novo evento
+                            Nova data
                         </button>
-                        <button class="add-button" id="btn-promover-evento" onclick="abrirModalPromoverEvento()">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            Promover evento da Agenda
-                        </button>
+                    </div>
+                    <div class="datas-especiais-stats" id="datas-especiais-stats"></div>
+                    <div class="datas-especiais-lista" id="datas-especiais-lista">
+                        <!-- Preenchido via JS: datasEspeciaisPersonalizadasRender() -->
                     </div>
                 </div>
 
-                <div class="conta-usuarios-lista" id="eventos-gerenciados-lista" style="margin-top:16px;"></div>
             </div>
+                </div>
+
+                <div id="eventos-painel-gestao" class="eventos-painel-principal hidden">
+                    <div class="bandas-header">
+                        <div></div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <button class="btn-upload" id="btn-criar-evento-direto" onclick="abrirModalCriarEventoDireto()">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Criar novo evento
+                            </button>
+                            <button class="add-button" id="btn-promover-evento" onclick="abrirModalPromoverEvento()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                Promover evento da Agenda
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="conta-usuarios-lista" id="eventos-gerenciados-lista" style="margin-top:16px;"></div>
+                </div>
+            </div>
+
 
             <!-- MODAL: CRIAR NOVO EVENTO DIRETO (já nasce com gestão completa,
                  sem precisar promover um evento já existente na Agenda) -->
@@ -10086,6 +10094,10 @@
                     <button type="button" class="btn-upload" onclick="abrirPaginaPublicaEmNovaAba()">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                         Ver página pública
+                    </button>
+                    <button type="button" class="btn-excluir" onclick="excluirEventoGerenciado(eventoGestaoAtualId)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        Excluir evento
                     </button>
                 </div>
 
@@ -12481,6 +12493,22 @@
         } else if (item.tipo === 'usuario') {
             usuariosSistema.push(item.dados);
             await sincronizarUsuario(item.dados.id);
+        } else if (item.tipo === 'evento') {
+            const { agenda: eventoAgenda, gerenciado: eventoGerenciado } = item.dados;
+            if (eventoAgenda) {
+                eventos.push(eventoAgenda);
+                await salvarEventosStorage();
+            }
+            if (eventoGerenciado) {
+                eventosGerenciados.push(eventoGerenciado);
+                await sincronizarEventoGerenciado(eventoGerenciado.id);
+                if (eventoGerenciado.quadroKanbanId && !quadrosKanban.some(q => q.id === eventoGerenciado.quadroKanbanId)) {
+                    quadrosKanban.push({ id: eventoGerenciado.quadroKanbanId, nome: eventoNomeExibicao(eventoGerenciado), eventoId: eventoGerenciado.id, protegido: false });
+                    await salvarQuadrosKanbanStorage();
+                }
+            }
+            agendaRender();
+            if (typeof eventosGerenciadosRender === 'function') eventosGerenciadosRender();
         }
 
         lixeira = lixeira.filter(x => x.id !== lixeiraId);
@@ -15394,7 +15422,7 @@
         if (pageName === 'meus-dados') { aparenciaRender(); equipamentosCasaRenderConfig(); atualizarPermissaoMeusDados(); }
         if (pageName === 'integracoes') { integracoesRender(); }
         if (pageName === 'lixeira') { lixeiraRender(); }
-        if (pageName === 'eventos') { eventosGerenciadosRender(); }
+        if (pageName === 'eventos') { agendaRender(); eventosGerenciadosRender(); }
         if (pageName === 'suporte') { suporteRender(); }
 
         fecharSidebarMobile();
@@ -16318,6 +16346,19 @@
     let eventoGestaoAtualId = null;
     let eventoGestaoAbaAtual = 'programacao';
 
+    function eventosTrocarAbaPrincipal(view, btn) {
+        document.querySelectorAll('#eventos-page > .marketing-tabs .eventos-tab-principal').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('#eventos-page > .eventos-painel-principal').forEach(p => p.classList.add('hidden'));
+        document.getElementById('eventos-painel-' + view).classList.remove('hidden');
+
+        if (view === 'calendario') {
+            agendaRender();
+        } else {
+            eventosGerenciadosRender();
+        }
+    }
+
     function eventosGerenciadosRender() {
         const btnPromover = document.getElementById('btn-promover-evento');
         if (btnPromover) btnPromover.classList.toggle('hidden', !temPermissao('gerenciarEventos'));
@@ -16351,11 +16392,14 @@
     async function excluirEventoGerenciado(id) {
         const evento = eventosGerenciados.find(e => e.id === id);
         if (!evento) return;
+        const eventoAgenda = eventos.find(e => e.id === id) || null;
 
         customConfirm(
             `Excluir "${eventoNomeExibicao(evento)}"?`,
-            'Isso apaga programação, checklist, fornecedores, equipe, patrocínios, lotes de ingresso, pedidos e lançamentos financeiros desse evento. Não pode ser desfeito.',
+            'Vai pra lixeira com programação, checklist, fornecedores, equipe, patrocínios, lotes de ingresso, pedidos e lançamentos financeiros — dá pra restaurar por até 10 dias.',
             async () => {
+                moverParaLixeira('evento', eventoNomeExibicao(evento), { agenda: eventoAgenda, gerenciado: evento }, id);
+
                 eventosGerenciados = eventosGerenciados.filter(e => e.id !== id);
                 if (supabaseClient) {
                     // Filhos saem sozinhos por cascata no banco — só
@@ -16368,9 +16412,21 @@
                 }
                 quadrosKanban = quadrosKanban.filter(q => q.id !== evento.quadroKanbanId);
 
+                if (eventoAgenda) {
+                    eventos = eventos.filter(e => e.id !== id);
+                    await excluirEventoAgendaSupabase(id);
+                }
+
                 eventosGerenciadosRender();
+                agendaRender();
                 dashboardRender();
                 if (typeof kanbanRender === 'function') kanbanRender();
+
+                // Se a exclusão veio de dentro da própria página de gestão
+                // desse evento, não faz sentido ficar nela — volta pra lista.
+                if (!document.getElementById('evento-gestao-page').classList.contains('hidden')) {
+                    changePage('eventos', document.getElementById('menu-item-eventos'));
+                }
             },
             'Excluir'
         );
@@ -18614,9 +18670,16 @@
 
     function voltarParaAgenda() {
         document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-        document.getElementById('agenda-page').classList.remove('hidden');
+        document.getElementById('eventos-page').classList.remove('hidden');
+        // Garante que a aba Calendário (não Gestão completa) fique ativa,
+        // já que "voltar da tela de detalhe do evento" é sempre voltando
+        // pro calendário, de onde esse evento foi aberto.
+        const btnCalendario = document.querySelector('#eventos-page .eventos-tab-principal');
+        if (btnCalendario) eventosTrocarAbaPrincipal('calendario', btnCalendario);
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        const menuEventos = document.getElementById('menu-item-eventos');
+        if (menuEventos) menuEventos.classList.add('active');
         eventoAtualId = null;
-        agendaRender();
     }
 
     function fecharModalDetalhes() {
@@ -19201,20 +19264,46 @@
 
     // ---------- EXCLUSÃO ----------
     function excluirEventoConfirmar() {
-        document.getElementById('modal-excluir-evento').style.display = 'flex';
+        const modal = document.getElementById('modal-excluir-evento');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
     }
 
     function fecharModalExcluirEvento() {
-        document.getElementById('modal-excluir-evento').style.display = 'none';
+        const modal = document.getElementById('modal-excluir-evento');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
     }
 
     async function confirmarExclusaoEvento() {
         const idParaExcluir = eventoAtualId;
+        const eventoAgenda = eventos.find(e => e.id === idParaExcluir);
+        if (!eventoAgenda) return;
+        const eventoGerenciado = eventosGerenciados.find(e => e.id === idParaExcluir) || null;
+
+        // Guarda os dois lados (agenda + gestão completa, se existir) juntos
+        // na lixeira, pra restaurar tudo de volta corretamente se precisar.
+        moverParaLixeira('evento', eventoNomeExibicao(eventoAgenda), { agenda: eventoAgenda, gerenciado: eventoGerenciado }, idParaExcluir);
+
         eventos = eventos.filter(e => e.id !== idParaExcluir);
         await excluirEventoAgendaSupabase(idParaExcluir);
+
+        if (eventoGerenciado) {
+            eventosGerenciados = eventosGerenciados.filter(e => e.id !== idParaExcluir);
+            if (supabaseClient) {
+                await supabaseClient.from('eventos').delete().eq('id', idParaExcluir);
+                if (eventoGerenciado.quadroKanbanId) {
+                    await supabaseClient.from('quadros_kanban').delete().eq('id', eventoGerenciado.quadroKanbanId);
+                }
+            }
+            quadrosKanban = quadrosKanban.filter(q => q.id !== eventoGerenciado.quadroKanbanId);
+        }
+
         fecharModalExcluirEvento();
         fecharModalDetalhes();
         agendaRender();
+        dashboardRender();
+        if (typeof kanbanRender === 'function') kanbanRender();
     }
 
     // =====================================================
@@ -20797,6 +20886,7 @@
         else if (marketingViewAtual === 'biblioteca') bibliotecaRender();
         else if (marketingViewAtual === 'chat') chatRender();
         else if (marketingViewAtual === 'template') templateRender();
+        else if (marketingViewAtual === 'calendario') calendarioEditorialRender();
     }
 
     // =====================================================
@@ -20817,7 +20907,6 @@
 
     function agendaRenderViewAtual() {
         if (agendaViewAtual === 'semana') agendaRenderSemana();
-        else if (agendaViewAtual === 'calendario') calendarioEditorialRender();
         else if (agendaViewAtual === 'datas') datasEspeciaisPersonalizadasRender();
     }
 
