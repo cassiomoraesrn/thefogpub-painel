@@ -15122,8 +15122,8 @@
         if (saved) eventos = JSON.parse(saved);
     } catch(e) {}
 
-    function salvarEventosStorage() {
-        try { localStorage.setItem(storageKey('eventos'), JSON.stringify(eventos)); } catch(e) {}
+    async function salvarEventosStorage() {
+        await sincronizarTodaAgenda();
     }
 
     // =====================================================
@@ -15761,6 +15761,57 @@
         });
     }
 
+    // =====================================================
+    //  AGENDA — último módulo a migrar. Mesmo padrão de bloco JSON
+    //  por linha usado em Bandas e Demandas (cada evento tem uma lista
+    //  aninhada de bandas com horário, então não precisa de tabela
+    //  relacional separada).
+    // =====================================================
+    async function carregarAgendaDoSupabase() {
+        const { data, error } = await supabaseClient.from('agenda_eventos').select('*');
+        if (error) { mostrarErroConexaoSupabase(); return false; }
+
+        if (data.length === 0 && eventos.length > 0) {
+            await sincronizarTodaAgenda();
+        } else {
+            eventos = data.map(row => row.dados);
+        }
+        return true;
+    }
+
+    async function sincronizarTodaAgenda() {
+        if (!supabaseClient || eventos.length === 0) return;
+        const linhas = eventos.map(e => ({ id: e.id, dados: e, atualizado_em: new Date().toISOString() }));
+        await supabaseClient.from('agenda_eventos').upsert(linhas);
+    }
+
+    async function excluirEventoAgendaSupabase(id) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('agenda_eventos').delete().eq('id', id);
+    }
+
+    let recarregandoAgenda = false;
+    async function recarregarAgendaERerenderizar() {
+        if (recarregandoAgenda) return;
+        recarregandoAgenda = true;
+        const ok = await carregarAgendaDoSupabase();
+        recarregandoAgenda = false;
+        if (!ok) return;
+        if (typeof agendaRender === 'function') agendaRender();
+        dashboardRender();
+    }
+
+    function iniciarRealtimeAgenda() {
+        if (!supabaseClient) return;
+        const canal = supabaseClient.channel('agenda-realtime');
+        canal.on('postgres_changes', { event: '*', schema: 'public', table: 'agenda_eventos' }, () => {
+            recarregarAgendaERerenderizar();
+        });
+        canal.subscribe((status, err) => {
+            console.log('Realtime (agenda): status da inscrição:', status, err || '');
+        });
+    }
+
     function eventoNomeExibicao(evento) {
         return evento.nomeEvento || evento.bandas.map(b => nomeBandaPorId(b.bandaId)).join(' + ') || 'Evento';
     }
@@ -15845,6 +15896,25 @@
         quadrosKanban.push({ id: novoQuadroId, nome: nomeQuadro, eventoId: eventoAgenda.id, protegido: false });
         salvarQuadrosKanbanStorage();
 
+        // Programação já nasce preenchida com o que a Agenda já sabe:
+        // horário de abertura da casa (se tiver) e o horário de cada
+        // banda escalada — sem precisar redigitar tudo de novo aqui.
+        const programacaoInicial = [];
+        if (eventoAgenda.horarioAberturaHouse) {
+            programacaoInicial.push({
+                id: 'prog_auto_abertura', horario: eventoAgenda.horarioAberturaHouse,
+                titulo: 'Abertura dos portões', descricao: '', setor: 'Entrada principal'
+            });
+        }
+        (eventoAgenda.bandas || []).forEach(b => {
+            if (!b.horarioInicio) return;
+            programacaoInicial.push({
+                id: 'prog_auto_' + b.bandaId, horario: b.horarioInicio,
+                titulo: nomeBandaPorId(b.bandaId), descricao: '', setor: 'Palco principal'
+            });
+        });
+        programacaoInicial.sort((a, b) => (a.horario || '').localeCompare(b.horario || ''));
+
         const novoEventoGerenciado = {
             id: eventoAgenda.id,
             nomeEvento: nomeQuadro,
@@ -15852,7 +15922,7 @@
             descricaoEvento: eventoAgenda.descricaoEvento || '',
             gestaoCompletaAtiva: true,
             quadroKanbanId: novoQuadroId,
-            programacao: [], checklist: [], fornecedores: [], equipe: [], patrocinios: [], lotesIngresso: [],
+            programacao: programacaoInicial, checklist: [], fornecedores: [], equipe: [], patrocinios: [], lotesIngresso: [],
             financeiro: { lancamentos: [] }
         };
 
@@ -15900,7 +15970,7 @@
             status: 'confirmado'
         };
         eventos.push(novoEventoAgenda);
-        salvarEventosStorage();
+        await salvarEventosStorage();
 
         await criarEventoGerenciadoAPartirDeAgenda(novoEventoAgenda);
 
@@ -18250,9 +18320,10 @@
         document.getElementById('modal-excluir-evento').style.display = 'none';
     }
 
-    function confirmarExclusaoEvento() {
-        eventos = eventos.filter(e => e.id !== eventoAtualId);
-        salvarEventosStorage();
+    async function confirmarExclusaoEvento() {
+        const idParaExcluir = eventoAtualId;
+        eventos = eventos.filter(e => e.id !== idParaExcluir);
+        await excluirEventoAgendaSupabase(idParaExcluir);
         fecharModalExcluirEvento();
         fecharModalDetalhes();
         agendaRender();
@@ -22217,11 +22288,13 @@
         await carregarBandasDoSupabase();
         await carregarClientesDoSupabase();
         await carregarDemandasEQuadrosDoSupabase();
+        await carregarAgendaDoSupabase();
         iniciarRealtimeEventosGerenciados();
         iniciarRealtimeUsuariosEFuncoes();
         iniciarRealtimeBandas();
         iniciarRealtimeClientes();
         iniciarRealtimeDemandasEQuadros();
+        iniciarRealtimeAgenda();
 
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
