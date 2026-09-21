@@ -538,6 +538,68 @@
             max-width: 520px;
         }
 
+        /* =====================================================
+           PÁGINA PÚBLICA DO EVENTO — venda/reserva de ingresso
+           ===================================================== */
+        .evento-publico-box {
+            background: var(--white);
+            border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 640px;
+            overflow: hidden;
+        }
+
+        .evento-publico-capa {
+            width: 100%;
+            aspect-ratio: 16 / 7;
+            background-size: cover;
+            background-position: center;
+            background-color: var(--beige);
+        }
+        .evento-publico-capa-vazia {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brown-light);
+        }
+
+        .evento-publico-corpo { padding: 28px 32px 36px; }
+        .evento-publico-corpo h1 { color: var(--green-dark); margin: 0 0 6px; font-size: 26px; }
+        .evento-publico-data { color: var(--brown); font-weight: 600; font-size: 14px; margin: 0 0 16px; text-transform: capitalize; }
+        .evento-publico-descricao { color: var(--warm-gray); font-size: 14.5px; line-height: 1.6; margin: 0 0 24px; }
+
+        .evento-publico-secao { margin-bottom: 28px; }
+        .evento-publico-secao h2 { font-size: 16px; color: var(--black); margin: 0 0 14px; }
+
+        .evento-publico-prog-item {
+            display: flex;
+            align-items: baseline;
+            gap: 14px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 14px;
+        }
+        .evento-publico-prog-item:last-child { border-bottom: none; }
+        .evento-publico-prog-horario { font-weight: 700; color: var(--brown); font-variant-numeric: tabular-nums; min-width: 44px; }
+        .evento-publico-prog-titulo { color: var(--black); }
+
+        .evento-publico-form-total-linha {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 14px 0;
+            margin-bottom: 16px;
+            border-top: 1px solid var(--line);
+            font-size: 15px;
+        }
+        .evento-publico-form-total-linha strong { font-size: 20px; font-variant-numeric: tabular-nums; color: var(--green-dark); }
+
+        @media (max-width: 640px) {
+            .evento-publico-corpo { padding: 22px 20px 28px; }
+            .evento-publico-corpo h1 { font-size: 22px; }
+        }
+
         .cadastro-publico-header {
             text-align: center;
             margin-bottom: 8px;
@@ -7367,6 +7429,20 @@
             min-width: 0;
         }
 
+        .evento-gestao-capa-preview {
+            width: 64px;
+            height: 64px;
+            border-radius: 10px;
+            background-color: var(--beige);
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brown-light);
+            flex-shrink: 0;
+        }
+
         @media (max-width: 768px) {
             .evento-gestao-layout {
                 flex-direction: column;
@@ -8286,6 +8362,75 @@
                 <p>Recebemos os dados da sua banda. O responsável pela casa vai analisar e entrar em contato em breve.</p>
             </div>
 
+        </div>
+    </div>
+
+    <!-- TELA PÚBLICA: PÁGINA DO EVENTO (venda/reserva de ingresso) -->
+    <div id="eventoPublicoScreen" class="cadastro-publico-container hidden" style="align-items:flex-start;">
+        <div id="evento-publico-nao-encontrado" class="cadastro-publico-box hidden" style="text-align:center;">
+            <h2>Evento não encontrado</h2>
+            <p>Esse link não existe mais, ou o evento foi removido.</p>
+        </div>
+
+        <div id="evento-publico-conteudo" class="evento-publico-box">
+            <div id="evento-publico-capa" class="evento-publico-capa evento-publico-capa-vazia">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+            </div>
+            <div class="evento-publico-corpo">
+                <h1 id="evento-publico-nome">—</h1>
+                <p class="evento-publico-data" id="evento-publico-data">—</p>
+                <p class="evento-publico-descricao hidden" id="evento-publico-descricao"></p>
+
+                <div id="evento-publico-programacao-bloco" class="evento-publico-secao hidden">
+                    <h2>Programação</h2>
+                    <div id="evento-publico-programacao-lista"></div>
+                </div>
+
+                <div class="evento-publico-secao">
+                    <h2>Ingressos</h2>
+                    <div id="evento-publico-lotes-lista"></div>
+                </div>
+
+                <div id="evento-publico-form-bloco" class="evento-publico-secao hidden">
+                    <h2>Garantir ingresso</h2>
+                    <p class="aparencia-bloco-sub" style="margin-top:-6px;">Isso reserva seu ingresso. O pagamento ainda é combinado direto com a organização (PIX, na entrada, etc) — em breve dá pra pagar direto por aqui.</p>
+                    <p id="evento-publico-form-erro" class="cadastro-publico-erro hidden"></p>
+                    <div class="demanda-campo">
+                        <label>Nome completo <span class="campo-obrigatorio">*</span></label>
+                        <input type="text" id="evento-publico-form-nome" class="form-input">
+                    </div>
+                    <div class="demanda-campo-linha">
+                        <div class="demanda-campo">
+                            <label>WhatsApp <span class="campo-obrigatorio">*</span></label>
+                            <input type="text" id="evento-publico-form-whatsapp" class="form-input" placeholder="(00) 00000-0000">
+                        </div>
+                        <div class="demanda-campo">
+                            <label>E-mail</label>
+                            <input type="email" id="evento-publico-form-email" class="form-input">
+                        </div>
+                    </div>
+                    <div class="demanda-campo-linha">
+                        <div class="demanda-campo">
+                            <label>Lote <span class="campo-obrigatorio">*</span></label>
+                            <select id="evento-publico-form-lote" class="form-input" onchange="eventoPublicoAtualizarValorForm()"></select>
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Quantidade</label>
+                            <input type="number" id="evento-publico-form-quantidade" class="form-input" min="1" value="1" onchange="eventoPublicoAtualizarValorForm()">
+                        </div>
+                    </div>
+                    <div class="evento-publico-form-total-linha">
+                        <span>Total</span>
+                        <strong id="evento-publico-form-total">R$ 0,00</strong>
+                    </div>
+                    <button type="button" class="btn-save" style="width:100%;" onclick="enviarReservaEventoPublico()">Garantir ingresso</button>
+                </div>
+
+                <div id="evento-publico-form-sucesso" class="cadastro-publico-sucesso hidden">
+                    <h2>Reserva feita!</h2>
+                    <p>A organização vai entrar em contato pelo WhatsApp pra confirmar o pagamento.</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -9904,7 +10049,21 @@
                 </div>
 
                 <h1 id="evento-gestao-nome" style="margin:0 0 4px;">—</h1>
-                <p class="aparencia-bloco-sub" id="evento-gestao-data" style="margin-bottom:20px;">—</p>
+                <p class="aparencia-bloco-sub" id="evento-gestao-data" style="margin-bottom:16px;">—</p>
+
+                <div style="display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap;">
+                    <div id="evento-gestao-capa-preview" class="evento-gestao-capa-preview">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>
+                    </div>
+                    <div>
+                        <button type="button" class="btn-upload" onclick="document.getElementById('evento-gestao-capa-input').click()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            Capa da página pública
+                        </button>
+                        <input type="file" id="evento-gestao-capa-input" accept="image/*" class="hidden" onchange="uploadCapaEvento(event)">
+                        <p class="aparencia-bloco-sub" style="margin:4px 0 0;">Aparece no topo do link que você compartilha pra vender ingresso.</p>
+                    </div>
+                </div>
 
                 <div class="clientes-stats" id="evento-gestao-resumo-financeiro"></div>
 
@@ -9946,6 +10105,7 @@
                             <div class="evento-gestao-nav-subitens" id="evento-gestao-nav-financeiro-subitens">
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-resumo" onclick="eventoGestaoTrocarAba('financeiro-resumo', this)">Resumo</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-lotes" onclick="eventoGestaoTrocarAba('financeiro-lotes', this)">Lotes de ingresso</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-pedidos" onclick="eventoGestaoTrocarAba('financeiro-pedidos', this)">Pedidos</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-receita" onclick="eventoGestaoTrocarAba('financeiro-receita', this)">Receitas</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-custo_fixo" onclick="eventoGestaoTrocarAba('financeiro-custo_fixo', this)">Custos fixos</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="financeiro-custo_variavel" onclick="eventoGestaoTrocarAba('financeiro-custo_variavel', this)">Custos variáveis</button>
@@ -10032,6 +10192,24 @@
                                 Novo lote
                             </button>
                             <div id="evento-gestao-lotes-lista"></div>
+                        </div>
+
+                        <!-- FINANCEIRO: PEDIDOS DE INGRESSO -->
+                        <div id="evento-gestao-view-financeiro-pedidos" class="marketing-view hidden">
+                            <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
+                                <p>Quem reservou ou comprou ingresso — pela página pública do evento, ou lançado manualmente aqui (venda por telefone, PIX direto, etc).</p>
+                            </div>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+                                <button type="button" class="add-button" onclick="abrirModalPedidoIngresso()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Registrar pedido manual
+                                </button>
+                                <button type="button" class="btn-upload" onclick="copiarLinkPublicoEvento()">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                    Copiar link da página pública
+                                </button>
+                            </div>
+                            <div id="evento-gestao-pedidos-lista"></div>
                         </div>
 
                         <!-- FINANCEIRO: RECEITAS -->
@@ -10137,7 +10315,63 @@
                 </div>
             </div>
 
-            <!-- MODAL: ITEM DE CHECKLIST DE PRODUÇÃO -->
+            <!-- MODAL: REGISTRAR PEDIDO DE INGRESSO (manual, pela equipe) -->
+            <div id="modal-pedido-ingresso" class="modal-overlay hidden">
+                <div class="modal-box modal-equipamento-casa-box">
+                    <div class="modal-demanda-header">
+                        <h3>Registrar pedido</h3>
+                        <button class="modal-fechar" onclick="fecharModalPedidoIngresso()">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="demanda-modal-corpo">
+                        <input type="hidden" id="pedido-ingresso-id">
+                        <p class="aparencia-bloco-sub" style="margin-top:-4px;">Use isso pra vendas fora da página pública — por telefone, PIX direto, na hora.</p>
+                        <div class="demanda-campo">
+                            <label>Lote <span class="campo-obrigatorio">*</span></label>
+                            <select id="pedido-ingresso-lote" class="form-input" onchange="pedidoIngressoAtualizarValor()"></select>
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Nome do comprador <span class="campo-obrigatorio">*</span></label>
+                                <input type="text" id="pedido-ingresso-nome" class="input-obrigatorio">
+                            </div>
+                            <div class="demanda-campo">
+                                <label>WhatsApp <span class="campo-obrigatorio">*</span></label>
+                                <input type="text" id="pedido-ingresso-whatsapp" class="input-obrigatorio" placeholder="(00) 00000-0000">
+                            </div>
+                        </div>
+                        <div class="demanda-campo">
+                            <label>E-mail</label>
+                            <input type="email" id="pedido-ingresso-email" class="form-input">
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Quantidade <span class="campo-obrigatorio">*</span></label>
+                                <input type="number" id="pedido-ingresso-quantidade" class="input-obrigatorio" min="1" value="1" onchange="pedidoIngressoAtualizarValor()">
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Valor total</label>
+                                <input type="text" id="pedido-ingresso-valor" class="form-input" placeholder="Calculado automaticamente">
+                            </div>
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Status do pagamento</label>
+                            <select id="pedido-ingresso-status" class="form-input">
+                                <option value="reservado">Reservado (ainda não pago)</option>
+                                <option value="pago">Pago</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-evento-footer">
+                        <button class="btn-cancelar-edicao" onclick="fecharModalPedidoIngresso()">Cancelar</button>
+                        <button class="btn-save" onclick="salvarPedidoIngresso()">Salvar</button>
+                    </div>
+                </div>
+            </div>
+
             <div id="modal-checklist-item" class="modal-overlay hidden">
                 <div class="modal-box modal-equipamento-casa-box">
                     <div class="modal-demanda-header">
@@ -13177,6 +13411,145 @@
         return false;
     }
 
+    function verificarRotaEventoPublico() {
+        const match = location.hash.match(/^#evento-publico=(.+)$/);
+        if (!match) return false;
+
+        const eventoId = decodeURIComponent(match[1]);
+        const evento = eventosGerenciados.find(e => e.id === eventoId);
+
+        const loginScreen = document.getElementById('loginScreen');
+        const painelScreen = document.getElementById('painelScreen');
+        const pagina = document.getElementById('eventoPublicoScreen');
+        if (loginScreen) loginScreen.classList.add('hidden');
+        if (painelScreen) painelScreen.classList.add('hidden');
+        if (pagina) pagina.classList.remove('hidden');
+
+        if (!evento) {
+            document.getElementById('evento-publico-nao-encontrado').classList.remove('hidden');
+            document.getElementById('evento-publico-conteudo').classList.add('hidden');
+            return true;
+        }
+
+        renderEventoPublico(evento);
+        return true;
+    }
+
+    function renderEventoPublico(evento) {
+        eventoPublicoAtualId = evento.id;
+
+        const capaEl = document.getElementById('evento-publico-capa');
+        if (evento.capa) {
+            capaEl.style.backgroundImage = `url('${evento.capa}')`;
+            capaEl.classList.remove('evento-publico-capa-vazia');
+        } else {
+            capaEl.style.backgroundImage = '';
+            capaEl.classList.add('evento-publico-capa-vazia');
+        }
+
+        document.getElementById('evento-publico-nome').textContent = evento.nomeEvento;
+        document.getElementById('evento-publico-data').textContent = evento.data
+            ? new Date(evento.data + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+            : '';
+        const descEl = document.getElementById('evento-publico-descricao');
+        if (evento.descricaoEvento) {
+            descEl.textContent = evento.descricaoEvento;
+            descEl.classList.remove('hidden');
+        } else {
+            descEl.classList.add('hidden');
+        }
+
+        // Programação
+        const progItens = (evento.programacao || []).slice().sort((a, b) => (a.horario || '').localeCompare(b.horario || ''));
+        const progBloco = document.getElementById('evento-publico-programacao-bloco');
+        if (progItens.length > 0) {
+            progBloco.classList.remove('hidden');
+            document.getElementById('evento-publico-programacao-lista').innerHTML = progItens.map(p => `
+                <div class="evento-publico-prog-item">
+                    <span class="evento-publico-prog-horario">${p.horario || ''}</span>
+                    <span class="evento-publico-prog-titulo">${p.titulo}</span>
+                </div>`).join('');
+        } else {
+            progBloco.classList.add('hidden');
+        }
+
+        // Lotes de ingresso
+        const lotes = evento.lotesIngresso || [];
+        const lotesLista = document.getElementById('evento-publico-lotes-lista');
+        const selectLote = document.getElementById('evento-publico-form-lote');
+        if (lotes.length === 0) {
+            lotesLista.innerHTML = '<div class="bandas-vazio">Ingressos ainda não disponíveis pra esse evento.</div>';
+            document.getElementById('evento-publico-form-bloco').classList.add('hidden');
+        } else {
+            document.getElementById('evento-publico-form-bloco').classList.remove('hidden');
+            const opcoesSelect = [];
+            lotesLista.innerHTML = lotes.map(l => {
+                const vendidos = eventoContarVendidosDoLote(evento, l.id);
+                const restantes = l.quantidadeTotal ? Math.max(0, l.quantidadeTotal - vendidos) : null;
+                const esgotado = restantes !== null && restantes <= 0;
+                if (!esgotado) opcoesSelect.push(`<option value="${l.id}" data-preco="${l.precoUnitario}">${l.nome} — ${formatarMoeda(l.precoUnitario)}</option>`);
+                return `
+                    <div class="fin-lote-card">
+                        <div class="fin-lote-info">
+                            <span class="fin-lote-nome">${l.nome}${esgotado ? ' <span class="fin-linha-tag" style="background:#FEE2E2; color:#991B1B;">Esgotado</span>' : ''}</span>
+                            <span class="fin-lote-detalhe">${l.inclui || ''}</span>
+                        </div>
+                        <div class="fin-lote-preco">${formatarMoeda(l.precoUnitario)}</div>
+                    </div>`;
+            }).join('');
+            selectLote.innerHTML = opcoesSelect.join('') || '<option value="">Nenhum lote disponível</option>';
+            eventoPublicoAtualizarValorForm();
+        }
+    }
+
+    let eventoPublicoAtualId = null;
+
+    function eventoPublicoAtualizarValorForm() {
+        const select = document.getElementById('evento-publico-form-lote');
+        const opcao = select.options[select.selectedIndex];
+        const preco = opcao ? parseFloat(opcao.dataset.preco || 0) : 0;
+        const qtd = parseInt(document.getElementById('evento-publico-form-quantidade').value) || 1;
+        document.getElementById('evento-publico-form-total').textContent = formatarMoeda(preco * qtd);
+    }
+
+    async function enviarReservaEventoPublico() {
+        const evento = eventosGerenciados.find(e => e.id === eventoPublicoAtualId);
+        const erroEl = document.getElementById('evento-publico-form-erro');
+        if (!evento) return;
+
+        const nome = document.getElementById('evento-publico-form-nome').value.trim();
+        const whatsapp = document.getElementById('evento-publico-form-whatsapp').value.trim();
+        const email = document.getElementById('evento-publico-form-email').value.trim();
+        const loteId = document.getElementById('evento-publico-form-lote').value;
+        const quantidade = parseInt(document.getElementById('evento-publico-form-quantidade').value) || 1;
+
+        if (!nome || !whatsapp || !loteId) {
+            erroEl.textContent = 'Preencha nome, WhatsApp e escolha um lote.';
+            erroEl.classList.remove('hidden');
+            return;
+        }
+        erroEl.classList.add('hidden');
+
+        const lote = (evento.lotesIngresso || []).find(l => l.id === loteId);
+        const novoPedido = {
+            id: 'pedido_pub_' + Date.now(),
+            eventoId: evento.id,
+            loteId,
+            nomeComprador: nome,
+            whatsappComprador: whatsapp,
+            emailComprador: email,
+            quantidade,
+            valorTotal: (lote ? lote.precoUnitario : 0) * quantidade,
+            status: 'reservado',
+            criadoEm: new Date().toISOString()
+        };
+
+        await sincronizarPedidoIngresso(novoPedido);
+
+        document.getElementById('evento-publico-form-bloco').classList.add('hidden');
+        document.getElementById('evento-publico-form-sucesso').classList.remove('hidden');
+    }
+
     async function enviarCadastroPublicoBanda() {
         const nome = document.getElementById('cadpub-nome').value.trim();
         const genero = generoObterValor('cadpub');
@@ -15201,7 +15574,7 @@
     }
 
     async function carregarEventosGerenciadosDoSupabase() {
-        const [eventosR, progR, checkR, fornR, equipeR, patroR, loteR, lancR] = await Promise.all([
+        const [eventosR, progR, checkR, fornR, equipeR, patroR, loteR, lancR, pedidosR] = await Promise.all([
             supabaseClient.from('eventos').select('*'),
             supabaseClient.from('programacao_itens').select('*'),
             supabaseClient.from('checklist_itens').select('*'),
@@ -15209,10 +15582,11 @@
             supabaseClient.from('equipe_itens').select('*'),
             supabaseClient.from('patrocinios').select('*'),
             supabaseClient.from('lotes_ingresso').select('*'),
-            supabaseClient.from('lancamentos_financeiros').select('*')
+            supabaseClient.from('lancamentos_financeiros').select('*'),
+            supabaseClient.from('pedidos_ingresso').select('*')
         ]);
 
-        if (eventosR.error || progR.error || checkR.error || fornR.error || equipeR.error || patroR.error || loteR.error || lancR.error) {
+        if (eventosR.error || progR.error || checkR.error || fornR.error || equipeR.error || patroR.error || loteR.error || lancR.error || pedidosR.error) {
             mostrarErroConexaoSupabase();
             return false;
         }
@@ -15222,6 +15596,7 @@
             nomeEvento: row.nome,
             data: row.data,
             descricaoEvento: row.descricao || '',
+            capa: row.capa || null,
             gestaoCompletaAtiva: true,
             quadroKanbanId: row.quadro_kanban_id,
             programacao: progR.data.filter(p => p.evento_id === row.id)
@@ -15236,6 +15611,8 @@
                 .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), statusPagamento: p.status_pagamento })),
             lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
                 .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
+            pedidosIngresso: pedidosR.data.filter(p => p.evento_id === row.id)
+                .map(p => ({ id: p.id, loteId: p.lote_id, nomeComprador: p.nome_comprador, whatsappComprador: p.whatsapp_comprador, emailComprador: p.email_comprador || '', quantidade: p.quantidade, valorTotal: parseFloat(p.valor_total), status: p.status, criadoEm: p.criado_em })),
             financeiro: {
                 lancamentos: lancR.data.filter(l => l.evento_id === row.id)
                     .map(l => ({ id: l.id, tipo: l.tipo, origem: l.origem, loteId: l.lote_id, descricao: l.descricao, valor: parseFloat(l.valor), data: l.data }))
@@ -15254,11 +15631,16 @@
 
         await supabaseClient.from('eventos').upsert({
             id: evento.id, nome: evento.nomeEvento, data: evento.data, descricao: evento.descricaoEvento,
+            capa: evento.capa || null,
             gestao_completa_ativa: true, quadro_kanban_id: evento.quadroKanbanId, atualizado_em: new Date().toISOString()
         });
 
-        // Lançamentos primeiro (referenciam lote_id) e lotes depois, na exclusão
-        await supabaseClient.from('lancamentos_financeiros').delete().eq('evento_id', eventoId);
+        // Pedidos e lançamentos referenciam lote_id, então saem primeiro;
+        // lotes saem por último, na mesma leva dos outros filhos.
+        await Promise.all([
+            supabaseClient.from('pedidos_ingresso').delete().eq('evento_id', eventoId),
+            supabaseClient.from('lancamentos_financeiros').delete().eq('evento_id', eventoId)
+        ]);
         await Promise.all([
             supabaseClient.from('programacao_itens').delete().eq('evento_id', eventoId),
             supabaseClient.from('checklist_itens').delete().eq('evento_id', eventoId),
@@ -15284,10 +15666,35 @@
 
         await Promise.all(inserts);
 
+        const insertsFinal = [];
         if (evento.financeiro.lancamentos.length) {
-            await supabaseClient.from('lancamentos_financeiros').insert(
-                evento.financeiro.lancamentos.map(l => ({ id: l.id, evento_id: eventoId, tipo: l.tipo, origem: l.origem || null, lote_id: l.loteId || null, descricao: l.descricao, valor: l.valor, data: l.data || null })));
+            insertsFinal.push(supabaseClient.from('lancamentos_financeiros').insert(
+                evento.financeiro.lancamentos.map(l => ({ id: l.id, evento_id: eventoId, tipo: l.tipo, origem: l.origem || null, lote_id: l.loteId || null, descricao: l.descricao, valor: l.valor, data: l.data || null }))));
         }
+        if ((evento.pedidosIngresso || []).length) {
+            insertsFinal.push(supabaseClient.from('pedidos_ingresso').insert(
+                evento.pedidosIngresso.map(p => ({ id: p.id, evento_id: eventoId, lote_id: p.loteId || null, nome_comprador: p.nomeComprador, whatsapp_comprador: p.whatsappComprador, email_comprador: p.emailComprador || null, quantidade: p.quantidade, valor_total: p.valorTotal, status: p.status, criado_em: p.criadoEm || new Date().toISOString() }))));
+        }
+        await Promise.all(insertsFinal);
+    }
+
+    // Cria/atualiza só UM pedido, sem mexer no resto do evento — usado
+    // pela página pública (onde a pessoa não tem o restante do evento
+    // carregado na memória, só o pedido que está fazendo agora).
+    async function sincronizarPedidoIngresso(pedido) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('pedidos_ingresso').upsert({
+            id: pedido.id, evento_id: pedido.eventoId, lote_id: pedido.loteId || null,
+            nome_comprador: pedido.nomeComprador, whatsapp_comprador: pedido.whatsappComprador,
+            email_comprador: pedido.emailComprador || null, quantidade: pedido.quantidade,
+            valor_total: pedido.valorTotal, status: pedido.status,
+            criado_em: pedido.criadoEm || new Date().toISOString()
+        });
+    }
+
+    async function excluirPedidoIngressoSupabase(id) {
+        if (!supabaseClient) return;
+        await supabaseClient.from('pedidos_ingresso').delete().eq('id', id);
     }
 
     let recarregandoEventosGerenciados = false;
@@ -15310,6 +15717,7 @@
                 eventoGestaoRenderEquipe();
                 eventoGestaoRenderPatrocinios();
                 eventoGestaoRenderLotes();
+                eventoGestaoRenderPedidos();
                 eventoGestaoRenderFinanceiro();
             }
         }
@@ -16003,6 +16411,7 @@
         const [ano, mes, dia] = evento.data.split('-');
         document.getElementById('evento-gestao-nome').textContent = eventoNomeExibicao(evento);
         document.getElementById('evento-gestao-data').textContent = `${dia}/${mes}/${ano}`;
+        atualizarPreviewCapaEvento(evento);
 
         const grupoFinanceiro = document.getElementById('evento-gestao-nav-financeiro-grupo');
         if (grupoFinanceiro) grupoFinanceiro.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
@@ -16021,10 +16430,38 @@
         eventoGestaoRenderEquipe();
         eventoGestaoRenderPatrocinios();
         eventoGestaoRenderLotes();
+        eventoGestaoRenderPedidos();
         eventoGestaoRenderFinanceiro();
 
         document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
         document.getElementById('evento-gestao-page').classList.remove('hidden');
+    }
+
+    function atualizarPreviewCapaEvento(evento) {
+        const preview = document.getElementById('evento-gestao-capa-preview');
+        if (!preview) return;
+        if (evento.capa) {
+            preview.style.backgroundImage = `url('${evento.capa}')`;
+            preview.innerHTML = '';
+        } else {
+            preview.style.backgroundImage = '';
+            preview.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>';
+        }
+    }
+
+    async function uploadCapaEvento(ev) {
+        const file = ev.target.files[0];
+        if (!file) return;
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            evento.capa = e.target.result;
+            atualizarPreviewCapaEvento(evento);
+            await sincronizarEventoGerenciado(evento.id);
+        };
+        reader.readAsDataURL(file);
     }
 
     function eventoGestaoTrocarAba(aba, btn) {
@@ -16698,9 +17135,13 @@
         }).join('');
     }
 
+    // Conta ingressos "tomados" daquele lote — reservados ou pagos contam
+    // pra não vender além do estoque; só cancelados liberam a vaga de volta.
     function eventoContarVendidosDoLote(evento, loteId) {
-        const lancamentos = (evento.financeiro && evento.financeiro.lancamentos) || [];
-        return lancamentos.filter(l => l.tipo === 'receita' && l.origem === 'ingresso' && l.loteId === loteId).length;
+        const pedidos = evento.pedidosIngresso || [];
+        return pedidos
+            .filter(p => p.loteId === loteId && p.status !== 'cancelado')
+            .reduce((s, p) => s + (p.quantidade || 1), 0);
     }
 
     function abrirModalLoteIngresso(id) {
@@ -16767,6 +17208,167 @@
             await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderLotes();
         }, 'Excluir');
+    }
+
+    // ---------- PEDIDOS DE INGRESSO ----------
+    const PEDIDO_STATUS_LABEL = { reservado: 'Reservado', pago: 'Pago', cancelado: 'Cancelado' };
+
+    function eventoGestaoRenderPedidos() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-pedidos-lista');
+        if (!evento || !lista) return;
+
+        const pedidos = (evento.pedidosIngresso || []).slice().sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
+        if (pedidos.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Nenhum pedido ainda. Registre um manual ou compartilhe o link da página pública.</div>';
+            return;
+        }
+
+        lista.innerHTML = pedidos.map(p => {
+            const lote = (evento.lotesIngresso || []).find(l => l.id === p.loteId);
+            const corStatus = p.status === 'pago' ? '#166534' : (p.status === 'cancelado' ? '#991B1B' : '#B45309');
+            const fundoStatus = p.status === 'pago' ? '#DCFCE7' : (p.status === 'cancelado' ? '#FEE2E2' : '#FEF3C7');
+            return `
+                <div class="fin-linha" style="grid-template-columns: 1fr auto auto;">
+                    <span class="fin-linha-desc" style="flex-direction:column; align-items:flex-start; gap:2px;">
+                        <strong>${p.nomeComprador}</strong>
+                        <span style="font-size:12px; color:var(--warm-gray);">${p.whatsappComprador} · ${lote ? lote.nome : 'Lote removido'} · ${p.quantidade}x</span>
+                    </span>
+                    <span class="fin-linha-tag" style="background:${fundoStatus}; color:${corStatus}; font-weight:600;">${PEDIDO_STATUS_LABEL[p.status] || p.status}</span>
+                    <span class="fin-linha-valor">${formatarMoeda(p.valorTotal)}</span>
+                    <span class="fin-linha-acoes">
+                        ${p.status === 'reservado' ? `<button class="btn-icon-acao" onclick="marcarPedidoComoPago('${p.id}')" title="Marcar como pago">${ICONE_EDITAR}</button>` : ''}
+                        ${p.status !== 'cancelado' ? `<button class="btn-icon-acao excluir" onclick="cancelarPedidoIngresso('${p.id}')" title="Cancelar pedido">${ICONE_EXCLUIR}</button>` : ''}
+                    </span>
+                </div>`;
+        }).join('');
+    }
+
+    function abrirModalPedidoIngresso() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+
+        document.getElementById('pedido-ingresso-id').value = '';
+        document.getElementById('pedido-ingresso-nome').value = '';
+        document.getElementById('pedido-ingresso-whatsapp').value = '';
+        document.getElementById('pedido-ingresso-email').value = '';
+        document.getElementById('pedido-ingresso-quantidade').value = '1';
+        document.getElementById('pedido-ingresso-status').value = 'reservado';
+
+        const select = document.getElementById('pedido-ingresso-lote');
+        select.innerHTML = (evento.lotesIngresso || []).map(l => `<option value="${l.id}">${l.nome} — ${formatarMoeda(l.precoUnitario)}</option>`).join('');
+
+        pedidoIngressoAtualizarValor();
+
+        const modal = document.getElementById('modal-pedido-ingresso');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalPedidoIngresso() {
+        const modal = document.getElementById('modal-pedido-ingresso');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    function pedidoIngressoAtualizarValor() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        const lote = (evento.lotesIngresso || []).find(l => l.id === document.getElementById('pedido-ingresso-lote').value);
+        const qtd = parseInt(document.getElementById('pedido-ingresso-quantidade').value) || 1;
+        if (lote) {
+            document.getElementById('pedido-ingresso-valor').value = String((lote.precoUnitario * qtd).toFixed(2)).replace('.', ',');
+        }
+    }
+
+    async function salvarPedidoIngresso() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+
+        const nome = document.getElementById('pedido-ingresso-nome').value.trim();
+        const whatsapp = document.getElementById('pedido-ingresso-whatsapp').value.trim();
+        const loteId = document.getElementById('pedido-ingresso-lote').value;
+        if (!nome || !whatsapp || !loteId) {
+            alert('Preencha nome, WhatsApp e escolha um lote.');
+            return;
+        }
+
+        const novoPedido = {
+            id: 'pedido_' + Date.now(),
+            loteId,
+            nomeComprador: nome,
+            whatsappComprador: whatsapp,
+            emailComprador: document.getElementById('pedido-ingresso-email').value.trim(),
+            quantidade: parseInt(document.getElementById('pedido-ingresso-quantidade').value) || 1,
+            valorTotal: parseFloat(document.getElementById('pedido-ingresso-valor').value.replace(/\./g, '').replace(',', '.')) || 0,
+            status: document.getElementById('pedido-ingresso-status').value,
+            criadoEm: new Date().toISOString()
+        };
+
+        evento.pedidosIngresso = evento.pedidosIngresso || [];
+        evento.pedidosIngresso.push(novoPedido);
+        await sincronizarPedidoIngresso({ ...novoPedido, eventoId: evento.id });
+
+        if (novoPedido.status === 'pago') {
+            await criarLancamentoDePedidoPago(evento, novoPedido);
+        }
+
+        fecharModalPedidoIngresso();
+        eventoGestaoRenderPedidos();
+        eventoGestaoRenderLotes();
+    }
+
+    // Ao marcar como pago, gera automaticamente o lançamento de receita
+    // correspondente — assim o financeiro não fica desalinhado do que
+    // realmente foi vendido.
+    async function criarLancamentoDePedidoPago(evento, pedido) {
+        const lote = (evento.lotesIngresso || []).find(l => l.id === pedido.loteId);
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+        evento.financeiro.lancamentos.push({
+            id: 'lanc_pedido_' + pedido.id,
+            tipo: 'receita', origem: 'ingresso', loteId: pedido.loteId,
+            descricao: `Venda de ingresso — ${pedido.nomeComprador} (${pedido.quantidade}x ${lote ? lote.nome : ''})`,
+            valor: pedido.valorTotal,
+            data: new Date().toISOString().slice(0, 10)
+        });
+        await sincronizarEventoGerenciado(evento.id);
+    }
+
+    async function marcarPedidoComoPago(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        const pedido = (evento.pedidosIngresso || []).find(p => p.id === id);
+        if (!pedido) return;
+
+        pedido.status = 'pago';
+        await sincronizarPedidoIngresso({ ...pedido, eventoId: evento.id });
+        await criarLancamentoDePedidoPago(evento, pedido);
+
+        eventoGestaoRenderPedidos();
+        eventoGestaoRenderLotes();
+        eventoGestaoRenderFinanceiro();
+    }
+
+    async function cancelarPedidoIngresso(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Cancelar esse pedido?', 'O ingresso volta a ficar disponível no estoque do lote.', async () => {
+            const pedido = (evento.pedidosIngresso || []).find(p => p.id === id);
+            if (!pedido) return;
+            pedido.status = 'cancelado';
+            await sincronizarPedidoIngresso({ ...pedido, eventoId: evento.id });
+            eventoGestaoRenderPedidos();
+            eventoGestaoRenderLotes();
+        }, 'Cancelar pedido');
+    }
+
+    function copiarLinkPublicoEvento() {
+        const link = `${window.location.origin}${window.location.pathname}#evento-publico=${eventoGestaoAtualId}`;
+        navigator.clipboard.writeText(link).then(() => {
+            alert('Link copiado! Compartilhe com quem quiser vender ingresso.');
+        }).catch(() => {
+            prompt('Copie o link abaixo:', link);
+        });
     }
 
     // ---------- LANÇAMENTOS FINANCEIROS ----------
@@ -22314,7 +22916,8 @@
         const ehRotaCadastroBanda = verificarRotaCadastroPublico();
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
         const ehRotaEditarBanda = !ehRotaCadastroBanda && !ehRotaConviteUsuario && verificarRotaEditarBanda();
-        if (ehRotaCadastroBanda || ehRotaConviteUsuario || ehRotaEditarBanda) return; // não precisa inicializar o painel interno
+        const ehRotaEventoPublico = !ehRotaCadastroBanda && !ehRotaConviteUsuario && !ehRotaEditarBanda && verificarRotaEventoPublico();
+        if (ehRotaCadastroBanda || ehRotaConviteUsuario || ehRotaEditarBanda || ehRotaEventoPublico) return; // não precisa inicializar o painel interno
 
         carregarDatasEspeciaisPersonalizadas();
         carregarEquipamentosCasa();
