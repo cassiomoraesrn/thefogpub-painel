@@ -10046,6 +10046,10 @@
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18"></rect><rect x="14" y="3" width="7" height="10"></rect></svg>
                         Ver quadro no Kanban
                     </button>
+                    <button type="button" class="btn-upload" onclick="abrirPaginaPublicaEmNovaAba()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                        Ver página pública
+                    </button>
                 </div>
 
                 <h1 id="evento-gestao-nome" style="margin:0 0 4px;">—</h1>
@@ -15726,7 +15730,7 @@
 
     function iniciarRealtimeEventosGerenciados() {
         if (!supabaseClient) return;
-        const tabelas = ['eventos', 'programacao_itens', 'checklist_itens', 'fornecedores', 'equipe_itens', 'patrocinios', 'lotes_ingresso', 'lancamentos_financeiros'];
+        const tabelas = ['eventos', 'programacao_itens', 'checklist_itens', 'fornecedores', 'equipe_itens', 'patrocinios', 'lotes_ingresso', 'lancamentos_financeiros', 'pedidos_ingresso'];
         const canal = supabaseClient.channel('eventos-realtime');
         tabelas.forEach(tabela => {
             canal.on('postgres_changes', { event: '*', schema: 'public', table: tabela }, (payload) => {
@@ -17341,7 +17345,9 @@
         if (!pedido) return;
 
         pedido.status = 'pago';
-        await sincronizarPedidoIngresso({ ...pedido, eventoId: evento.id });
+        // criarLancamentoDePedidoPago já sincroniza o evento inteiro (inclui
+        // esse pedido com o status atualizado), então não precisa de uma
+        // chamada separada só pra ele.
         await criarLancamentoDePedidoPago(evento, pedido);
 
         eventoGestaoRenderPedidos();
@@ -17362,13 +17368,21 @@
         }, 'Cancelar pedido');
     }
 
+    function linkPublicoEvento(eventoId) {
+        return `${window.location.origin}${window.location.pathname}#evento-publico=${eventoId}`;
+    }
+
     function copiarLinkPublicoEvento() {
-        const link = `${window.location.origin}${window.location.pathname}#evento-publico=${eventoGestaoAtualId}`;
+        const link = linkPublicoEvento(eventoGestaoAtualId);
         navigator.clipboard.writeText(link).then(() => {
             alert('Link copiado! Compartilhe com quem quiser vender ingresso.');
         }).catch(() => {
             prompt('Copie o link abaixo:', link);
         });
+    }
+
+    function abrirPaginaPublicaEmNovaAba() {
+        window.open(linkPublicoEvento(eventoGestaoAtualId), '_blank');
     }
 
     // ---------- LANÇAMENTOS FINANCEIROS ----------
