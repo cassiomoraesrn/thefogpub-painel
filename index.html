@@ -10785,10 +10785,56 @@
                             <select id="lancamento-lote" class="form-input"></select>
                         </div>
 
+                        <!-- Campos exclusivos de custo (produto/serviço comprado) — não
+                             aparecem quando o lançamento é uma receita. -->
+                        <div id="lancamento-custo-detalhes" class="hidden">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>É produto ou serviço?</label>
+                                    <select id="lancamento-tipo-item" class="form-input" onchange="lancamentoAtualizarCamposOrigem()">
+                                        <option value="produto">Produto</option>
+                                        <option value="servico">Serviço</option>
+                                    </select>
+                                </div>
+                                <div class="demanda-campo" id="lancamento-unidade-wrap">
+                                    <label>Unidade</label>
+                                    <select id="lancamento-unidade" class="form-input">
+                                        <option value="unidade">Unidade</option>
+                                        <option value="peca">Peça</option>
+                                        <option value="conjunto">Conjunto</option>
+                                        <option value="kg">Kg</option>
+                                        <option value="litro">Litro</option>
+                                        <option value="metro">Metro</option>
+                                        <option value="caixa">Caixa</option>
+                                        <option value="pacote">Pacote</option>
+                                        <option value="outro">Outro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Fornecedor</label>
+                                <select id="lancamento-fornecedor" class="form-input"></select>
+                            </div>
+                        </div>
+
                         <div class="demanda-campo">
                             <label>Descrição <span class="campo-obrigatorio">*</span></label>
                             <input type="text" id="lancamento-descricao" class="input-obrigatorio" placeholder="Ex: Som e iluminação, Venda lote 1...">
                         </div>
+
+                        <!-- Quantidade × preço unitário só faz sentido pra custo; receita
+                             continua com o campo de valor direto de sempre. -->
+                        <div class="demanda-campo-linha hidden" id="lancamento-quantidade-preco-wrap">
+                            <div class="demanda-campo">
+                                <label>Quantidade</label>
+                                <input type="number" id="lancamento-quantidade" class="form-input" min="0" step="0.01" value="1" onchange="lancamentoAtualizarValorTotal()">
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Preço unitário</label>
+                                <input type="text" id="lancamento-preco-unitario" class="form-input" placeholder="Ex: 150,00" onchange="lancamentoAtualizarValorTotal()">
+                            </div>
+                        </div>
+
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
                                 <label>Valor <span class="campo-obrigatorio">*</span></label>
@@ -10797,6 +10843,48 @@
                             <div class="demanda-campo">
                                 <label>Data</label>
                                 <input type="date" id="lancamento-data" class="form-input">
+                            </div>
+                        </div>
+
+                        <div id="lancamento-custo-detalhes-2" class="hidden">
+                            <div class="demanda-campo">
+                                <label>Forma de pagamento</label>
+                                <select id="lancamento-forma-pagamento" class="form-input">
+                                    <option value="pix">PIX</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="cartao_credito">Cartão de crédito</option>
+                                    <option value="cartao_debito">Cartão de débito</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="transferencia">Transferência</option>
+                                </select>
+                            </div>
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Status do pagamento</label>
+                                    <select id="lancamento-status-pagamento" class="form-input">
+                                        <option value="pendente">Pendente</option>
+                                        <option value="parcial">Parcial</option>
+                                        <option value="pago">Pago</option>
+                                    </select>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Previsão de pagamento</label>
+                                    <input type="date" id="lancamento-previsao-pagamento" class="form-input">
+                                </div>
+                            </div>
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label id="lancamento-status-entrega-label">Status da entrega</label>
+                                    <select id="lancamento-status-entrega" class="form-input">
+                                        <option value="pendente">Pendente</option>
+                                        <option value="a_caminho">A caminho</option>
+                                        <option value="concluido">Recebido</option>
+                                    </select>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label id="lancamento-previsao-entrega-label">Previsão de entrega</label>
+                                    <input type="date" id="lancamento-previsao-entrega" class="form-input">
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -15724,7 +15812,13 @@
                 .map(p => ({ id: p.id, loteId: p.lote_id, nomeComprador: p.nome_comprador, whatsappComprador: p.whatsapp_comprador, emailComprador: p.email_comprador || '', quantidade: p.quantidade, valorTotal: parseFloat(p.valor_total), status: p.status, criadoEm: p.criado_em })),
             financeiro: {
                 lancamentos: lancR.data.filter(l => l.evento_id === row.id)
-                    .map(l => ({ id: l.id, tipo: l.tipo, origem: l.origem, loteId: l.lote_id, descricao: l.descricao, valor: parseFloat(l.valor), data: l.data }))
+                    .map(l => ({
+                        id: l.id, tipo: l.tipo, origem: l.origem, loteId: l.lote_id, descricao: l.descricao, valor: parseFloat(l.valor), data: l.data,
+                        tipoItem: l.tipo_item, unidade: l.unidade, quantidade: l.quantidade ? parseFloat(l.quantidade) : null,
+                        precoUnitario: l.preco_unitario ? parseFloat(l.preco_unitario) : null, fornecedorId: l.fornecedor_id,
+                        formaPagamento: l.forma_pagamento, statusPagamento: l.status_pagamento, statusEntrega: l.status_entrega,
+                        previsaoPagamento: l.previsao_pagamento, previsaoEntrega: l.previsao_entrega
+                    }))
             }
         }));
         return true;
@@ -15778,7 +15872,13 @@
         const insertsFinal = [];
         if (evento.financeiro.lancamentos.length) {
             insertsFinal.push(supabaseClient.from('lancamentos_financeiros').insert(
-                evento.financeiro.lancamentos.map(l => ({ id: l.id, evento_id: eventoId, tipo: l.tipo, origem: l.origem || null, lote_id: l.loteId || null, descricao: l.descricao, valor: l.valor, data: l.data || null }))));
+                evento.financeiro.lancamentos.map(l => ({
+                    id: l.id, evento_id: eventoId, tipo: l.tipo, origem: l.origem || null, lote_id: l.loteId || null, descricao: l.descricao, valor: l.valor, data: l.data || null,
+                    tipo_item: l.tipoItem || null, unidade: l.unidade || null, quantidade: l.quantidade || null,
+                    preco_unitario: l.precoUnitario || null, fornecedor_id: l.fornecedorId || null,
+                    forma_pagamento: l.formaPagamento || null, status_pagamento: l.statusPagamento || null, status_entrega: l.statusEntrega || null,
+                    previsao_pagamento: l.previsaoPagamento || null, previsao_entrega: l.previsaoEntrega || null
+                }))));
         }
         if ((evento.pedidosIngresso || []).length) {
             insertsFinal.push(supabaseClient.from('pedidos_ingresso').insert(
@@ -17742,6 +17842,34 @@
         const ehReceita = tipo === 'receita';
         document.getElementById('lancamento-origem-wrap').classList.toggle('hidden', !ehReceita);
 
+        // Campos de compra (produto/serviço, fornecedor, entrega...) só
+        // fazem sentido pra saída de dinheiro, não pra receita.
+        const ehCusto = !ehReceita;
+        document.getElementById('lancamento-custo-detalhes').classList.toggle('hidden', !ehCusto);
+        document.getElementById('lancamento-quantidade-preco-wrap').classList.toggle('hidden', !ehCusto);
+        document.getElementById('lancamento-custo-detalhes-2').classList.toggle('hidden', !ehCusto);
+
+        if (ehCusto) {
+            const ehProduto = document.getElementById('lancamento-tipo-item').value === 'produto';
+            document.getElementById('lancamento-unidade-wrap').classList.toggle('hidden', !ehProduto);
+            // Serviço não "chega" fisicamente — o rótulo muda pra refletir
+            // isso, mas a ideia (algo pendente até acontecer) é a mesma.
+            document.getElementById('lancamento-status-entrega-label').textContent = ehProduto ? 'Status da entrega' : 'Status de conclusão';
+            document.getElementById('lancamento-previsao-entrega-label').textContent = ehProduto ? 'Previsão de entrega' : 'Previsão de conclusão';
+            const selectEntrega = document.getElementById('lancamento-status-entrega');
+            const opcaoConcluido = selectEntrega.querySelector('option[value="concluido"]');
+            if (opcaoConcluido) opcaoConcluido.textContent = ehProduto ? 'Recebido' : 'Concluído';
+
+            const fornecedorSelect = document.getElementById('lancamento-fornecedor');
+            if (!fornecedorSelect.dataset.preenchido) {
+                const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+                const fornecedores = (evento && evento.fornecedores) || [];
+                fornecedorSelect.innerHTML = '<option value="">— Nenhum —</option>' +
+                    fornecedores.map(f => `<option value="${f.id}">${f.nome}</option>`).join('');
+                fornecedorSelect.dataset.preenchido = '1';
+            }
+        }
+
         const origem = document.getElementById('lancamento-origem').value;
         const ehIngresso = ehReceita && origem === 'ingresso';
         const loteWrap = document.getElementById('lancamento-lote-wrap');
@@ -17757,6 +17885,17 @@
         }
     }
 
+    // Quantidade × preço unitário preenche o Valor sozinho — ainda dá pra
+    // editar o Valor manualmente depois, se precisar de um ajuste fino.
+    function lancamentoAtualizarValorTotal() {
+        const qtd = parseFloat(document.getElementById('lancamento-quantidade').value) || 0;
+        const precoTexto = document.getElementById('lancamento-preco-unitario').value.trim();
+        const preco = parseFloat(precoTexto.replace(/\./g, '').replace(',', '.')) || 0;
+        if (qtd > 0 && preco > 0) {
+            document.getElementById('lancamento-valor').value = (qtd * preco).toFixed(2).replace('.', ',');
+        }
+    }
+
     function abrirModalLancamentoFinanceiro(id, tipoPreSelecionado) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const l = id ? ((evento.financeiro && evento.financeiro.lancamentos) || []).find(x => x.id === id) : null;
@@ -17768,7 +17907,22 @@
         document.getElementById('lancamento-descricao').value = l ? l.descricao : '';
         document.getElementById('lancamento-valor').value = l ? String(l.valor).replace('.', ',') : '';
         document.getElementById('lancamento-data').value = l ? (l.data || '') : new Date().toISOString().slice(0, 10);
+
+        document.getElementById('lancamento-tipo-item').value = (l && l.tipoItem) || 'produto';
+        document.getElementById('lancamento-unidade').value = (l && l.unidade) || 'unidade';
+        document.getElementById('lancamento-quantidade').value = (l && l.quantidade) || 1;
+        document.getElementById('lancamento-preco-unitario').value = (l && l.precoUnitario) ? String(l.precoUnitario).replace('.', ',') : '';
+        document.getElementById('lancamento-forma-pagamento').value = (l && l.formaPagamento) || 'pix';
+        document.getElementById('lancamento-status-pagamento').value = (l && l.statusPagamento) || 'pendente';
+        document.getElementById('lancamento-status-entrega').value = (l && l.statusEntrega) || 'pendente';
+        document.getElementById('lancamento-previsao-pagamento').value = (l && l.previsaoPagamento) || '';
+        document.getElementById('lancamento-previsao-entrega').value = (l && l.previsaoEntrega) || '';
+
+        // Recarrega a lista de fornecedores toda vez que abre (pode ter
+        // mudado desde a última vez), depois marca o que já estava salvo.
+        document.getElementById('lancamento-fornecedor').dataset.preenchido = '';
         lancamentoAtualizarCamposOrigem();
+        if (l && l.fornecedorId) document.getElementById('lancamento-fornecedor').value = l.fornecedorId;
         if (l && l.origem === 'ingresso' && l.loteId) {
             document.getElementById('lancamento-lote').value = l.loteId;
         }
@@ -17812,6 +17966,18 @@
             if (dadosLancamento.origem === 'ingresso') {
                 dadosLancamento.loteId = document.getElementById('lancamento-lote').value || null;
             }
+        } else {
+            const precoUnitarioTexto = document.getElementById('lancamento-preco-unitario').value.trim();
+            dadosLancamento.tipoItem = document.getElementById('lancamento-tipo-item').value;
+            dadosLancamento.unidade = dadosLancamento.tipoItem === 'produto' ? document.getElementById('lancamento-unidade').value : null;
+            dadosLancamento.quantidade = parseFloat(document.getElementById('lancamento-quantidade').value) || 1;
+            dadosLancamento.precoUnitario = precoUnitarioTexto ? parseFloat(precoUnitarioTexto.replace(/\./g, '').replace(',', '.')) : null;
+            dadosLancamento.fornecedorId = document.getElementById('lancamento-fornecedor').value || null;
+            dadosLancamento.formaPagamento = document.getElementById('lancamento-forma-pagamento').value;
+            dadosLancamento.statusPagamento = document.getElementById('lancamento-status-pagamento').value;
+            dadosLancamento.statusEntrega = document.getElementById('lancamento-status-entrega').value;
+            dadosLancamento.previsaoPagamento = document.getElementById('lancamento-previsao-pagamento').value || null;
+            dadosLancamento.previsaoEntrega = document.getElementById('lancamento-previsao-entrega').value || null;
         }
 
         if (idExistente) {
@@ -17819,6 +17985,16 @@
             if (l) {
                 delete l.origem;
                 delete l.loteId;
+                delete l.tipoItem;
+                delete l.unidade;
+                delete l.quantidade;
+                delete l.precoUnitario;
+                delete l.fornecedorId;
+                delete l.formaPagamento;
+                delete l.statusPagamento;
+                delete l.statusEntrega;
+                delete l.previsaoPagamento;
+                delete l.previsaoEntrega;
                 Object.assign(l, dadosLancamento);
             }
         } else {
@@ -18051,6 +18227,10 @@
                 return;
             }
 
+            const STATUS_PAGAMENTO_LABEL = { pendente: 'Pagamento pendente', parcial: 'Pagamento parcial', pago: 'Pago' };
+            const STATUS_ENTREGA_LABEL = { pendente: 'Pendente', a_caminho: 'A caminho', concluido: 'Recebido/Concluído' };
+            const corStatus = (v, boas) => boas.includes(v) ? { bg: '#DCFCE7', fg: '#166534' } : (v === 'pendente' ? { bg: '#FEE2E2', fg: '#991B1B' } : { bg: '#FEF3C7', fg: '#B45309' });
+
             const linhas = itensDaCategoria.map(l => {
                 let detalheOrigem = '';
                 if (ehReceita && l.origem) {
@@ -18060,11 +18240,24 @@
                         if (lote) detalheOrigem += ' (' + lote.nome + ')';
                     }
                 }
+                let tagsCusto = '';
+                if (!ehReceita) {
+                    const fornecedor = l.fornecedorId ? (evento.fornecedores || []).find(f => f.id === l.fornecedorId) : null;
+                    if (fornecedor) tagsCusto += `<span class="fin-linha-tag">${fornecedor.nome}</span>`;
+                    if (l.statusPagamento) {
+                        const c = corStatus(l.statusPagamento, ['pago']);
+                        tagsCusto += `<span class="fin-linha-tag" style="background:${c.bg}; color:${c.fg};">${STATUS_PAGAMENTO_LABEL[l.statusPagamento]}</span>`;
+                    }
+                    if (l.statusEntrega) {
+                        const c = corStatus(l.statusEntrega, ['concluido']);
+                        tagsCusto += `<span class="fin-linha-tag" style="background:${c.bg}; color:${c.fg};">${STATUS_ENTREGA_LABEL[l.statusEntrega]}</span>`;
+                    }
+                }
                 const dataFormatada = l.data ? new Date(l.data + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '—';
                 return `
                 <div class="fin-linha">
                     <span class="fin-linha-data">${dataFormatada}</span>
-                    <span class="fin-linha-desc">${l.descricao}${detalheOrigem ? `<span class="fin-linha-tag">${detalheOrigem}</span>` : ''}</span>
+                    <span class="fin-linha-desc">${l.descricao}${detalheOrigem ? `<span class="fin-linha-tag">${detalheOrigem}</span>` : ''}${tagsCusto}</span>
                     <span class="fin-linha-valor ${ehReceita ? 'positivo' : 'negativo'}">${formatarMoeda(ehReceita ? l.valor : -l.valor)}</span>
                     <span class="fin-linha-acoes">
                         <button class="btn-icon-acao" onclick="abrirModalLancamentoFinanceiro('${l.id}')" title="Editar">${ICONE_EDITAR}</button>
