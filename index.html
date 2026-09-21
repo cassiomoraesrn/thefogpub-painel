@@ -10488,6 +10488,10 @@
                                 <option value="feito">Feito</option>
                             </select>
                         </div>
+                        <div class="demanda-campo">
+                            <label>Vincular a uma tarefa do Kanban deste evento (opcional)</label>
+                            <select id="checklist-item-demanda" class="form-input"></select>
+                        </div>
                     </div>
                     <div class="modal-evento-footer">
                         <button class="btn-cancelar-edicao" onclick="fecharModalChecklistItem()">Cancelar</button>
@@ -10513,21 +10517,38 @@
                             <label>Nome do fornecedor <span class="campo-obrigatorio">*</span></label>
                             <input type="text" id="fornecedor-nome" class="input-obrigatorio">
                         </div>
+                        <div class="demanda-campo">
+                            <label>Serviço prestado</label>
+                            <input type="text" id="fornecedor-servico" class="form-input" placeholder="Ex: Som e iluminação, Segurança...">
+                        </div>
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
-                                <label>Serviço prestado</label>
-                                <input type="text" id="fornecedor-servico" class="form-input" placeholder="Ex: Som e iluminação, Segurança...">
+                                <label>Nome do contato</label>
+                                <input type="text" id="fornecedor-nome-contato" class="form-input" placeholder="Quem você fala lá">
                             </div>
                             <div class="demanda-campo">
-                                <label>Contato</label>
+                                <label>Telefone/e-mail do contato</label>
                                 <input type="text" id="fornecedor-contato" class="form-input" placeholder="Telefone ou e-mail">
                             </div>
                         </div>
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
-                                <label>Valor combinado</label>
+                                <label>Valor a pagar</label>
                                 <input type="text" id="fornecedor-valor" class="form-input" placeholder="Ex: R$ 800,00">
                             </div>
+                            <div class="demanda-campo">
+                                <label>Forma de pagamento</label>
+                                <select id="fornecedor-forma-pagamento" class="form-input">
+                                    <option value="pix">PIX</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="cartao_credito">Cartão de crédito</option>
+                                    <option value="cartao_debito">Cartão de débito</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="transferencia">Transferência</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="demanda-campo-linha">
                             <div class="demanda-campo">
                                 <label>Status do pagamento</label>
                                 <select id="fornecedor-status-pagamento" class="form-input">
@@ -10536,6 +10557,14 @@
                                     <option value="pago">Pago</option>
                                 </select>
                             </div>
+                            <div class="demanda-campo">
+                                <label>Previsão de pagamento</label>
+                                <input type="date" id="fornecedor-previsao-pagamento" class="form-input">
+                            </div>
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Prazo de entrega</label>
+                            <input type="date" id="fornecedor-prazo-entrega" class="form-input">
                         </div>
                     </div>
                     <div class="modal-evento-footer">
@@ -10624,13 +10653,27 @@
                         <input type="hidden" id="programacao-item-id">
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
-                                <label>Horário <span class="campo-obrigatorio">*</span></label>
+                                <label>Início <span class="campo-obrigatorio">*</span></label>
                                 <input type="time" id="programacao-item-horario" class="input-obrigatorio">
                             </div>
                             <div class="demanda-campo">
-                                <label>Setor</label>
-                                <input type="text" id="programacao-item-setor" class="form-input" placeholder="Ex: Palco interno, Área externa...">
+                                <label>Fim</label>
+                                <input type="time" id="programacao-item-horario-fim" class="form-input">
                             </div>
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Setor</label>
+                            <select id="programacao-item-setor" class="form-input" onchange="programacaoItemSetorAtualizar()">
+                                <option value="Palco Principal">Palco Principal</option>
+                                <option value="Palco Externo">Palco Externo</option>
+                                <option value="Bar">Bar</option>
+                                <option value="Restaurante">Restaurante</option>
+                                <option value="Recepção">Recepção</option>
+                                <option value="Casa">Casa</option>
+                                <option value="Ambiente">Ambiente</option>
+                                <option value="outro">Outro...</option>
+                            </select>
+                            <input type="text" id="programacao-item-setor-outro" class="form-input hidden" placeholder="Qual?" style="margin-top:8px;">
                         </div>
                         <div class="demanda-campo">
                             <label>É uma apresentação de banda?</label>
@@ -10697,12 +10740,29 @@
                                 <input type="text" id="patrocinio-valor-dinheiro" class="form-input" placeholder="Ex: 3000,00 (0 se for só permuta)">
                             </div>
                             <div class="demanda-campo">
+                                <label>Forma de pagamento</label>
+                                <select id="patrocinio-forma-pagamento" class="form-input">
+                                    <option value="pix">PIX</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="cartao_credito">Cartão de crédito</option>
+                                    <option value="cartao_debito">Cartão de débito</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="transferencia">Transferência</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
                                 <label>Status do pagamento (parte em dinheiro)</label>
                                 <select id="patrocinio-status-pagamento" class="form-input">
                                     <option value="pendente">Pendente</option>
                                     <option value="parcial">Parcial</option>
                                     <option value="pago">Pago</option>
                                 </select>
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Previsão de pagamento</label>
+                                <input type="date" id="patrocinio-previsao-pagamento" class="form-input">
                             </div>
                         </div>
                         <div class="demanda-campo">
@@ -10725,12 +10785,16 @@
                                 <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="duranteEvento" data-item="banner_bandeira"> Banner ou bandeira no local</label>
                                 <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="duranteEvento" data-item="mencao_microfone"> Menção de agradecimento no microfone</label>
                                 <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="duranteEvento" data-item="espaco_ativacao"> Espaço próprio pra ativação da marca</label>
+                                <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="duranteEvento" data-item="display_mesas"> Display de mesas</label>
+                                <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="duranteEvento" data-item="logo_tvs"> Logotipo nas TVs</label>
+                                <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="duranteEvento" data-item="logo_canecas"> Logotipo nas canecas</label>
                                 <input type="text" id="entregavel-duranteEvento-outros" class="form-input" placeholder="Outro item do dia do evento..." style="margin-top:6px;">
                             </div>
 
                             <div class="entregavel-fase-bloco">
                                 <div class="entregavel-fase-titulo">Pós-evento</div>
                                 <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="posEvento" data-item="video_cobertura"> Logo no vídeo de cobertura do evento</label>
+                                <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="posEvento" data-item="logo_fotos_oficiais"> Logotipo nas fotos oficiais</label>
                                 <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="posEvento" data-item="agradecimento"> Agradecimento formal ao patrocinador</label>
                                 <label class="permissao-item"><input type="checkbox" class="entregavel-check" data-fase="posEvento" data-item="relatorio_dados"> Relatório com dados do evento (público, alcance...)</label>
                                 <input type="text" id="entregavel-posEvento-outros" class="form-input" placeholder="Outro item do pós-evento..." style="margin-top:6px;">
@@ -15797,15 +15861,19 @@
             gestaoCompletaAtiva: true,
             quadroKanbanId: row.quadro_kanban_id,
             programacao: progR.data.filter(p => p.evento_id === row.id)
-                .map(p => ({ id: p.id, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor, bandaId: p.banda_id || null })),
+                .map(p => ({ id: p.id, horario: p.horario, horarioFim: p.horario_fim, titulo: p.titulo, descricao: p.descricao, setor: p.setor, bandaId: p.banda_id || null })),
             checklist: checkR.data.filter(c => c.evento_id === row.id)
-                .map(c => ({ id: c.id, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo, status: c.status })),
+                .map(c => ({ id: c.id, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo, status: c.status, demandaId: c.demanda_id })),
             fornecedores: fornR.data.filter(f => f.evento_id === row.id)
-                .map(f => ({ id: f.id, nome: f.nome, servico: f.servico, contato: f.contato, valor: f.valor, statusPagamento: f.status_pagamento })),
+                .map(f => ({
+                    id: f.id, nome: f.nome, servico: f.servico, nomeContato: f.nome_contato, contato: f.contato, valor: f.valor,
+                    formaPagamento: f.forma_pagamento, statusPagamento: f.status_pagamento,
+                    previsaoPagamento: f.previsao_pagamento, prazoEntrega: f.prazo_entrega
+                })),
             equipe: equipeR.data.filter(eq => eq.evento_id === row.id)
                 .map(eq => ({ id: eq.id, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato })),
             patrocinios: patroR.data.filter(p => p.evento_id === row.id)
-                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), statusPagamento: p.status_pagamento })),
+                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, statusPagamento: p.status_pagamento, previsaoPagamento: p.previsao_pagamento })),
             lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
                 .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
             pedidosIngresso: pedidosR.data.filter(p => p.evento_id === row.id)
@@ -15855,15 +15923,19 @@
 
         const inserts = [];
         if (evento.programacao.length) inserts.push(supabaseClient.from('programacao_itens').insert(
-            evento.programacao.map(p => ({ id: p.id, evento_id: eventoId, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor, banda_id: p.bandaId || null }))));
+            evento.programacao.map(p => ({ id: p.id, evento_id: eventoId, horario: p.horario, horario_fim: p.horarioFim || null, titulo: p.titulo, descricao: p.descricao, setor: p.setor, banda_id: p.bandaId || null }))));
         if (evento.checklist.length) inserts.push(supabaseClient.from('checklist_itens').insert(
-            evento.checklist.map(c => ({ id: c.id, evento_id: eventoId, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo || null, status: c.status }))));
+            evento.checklist.map(c => ({ id: c.id, evento_id: eventoId, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo || null, status: c.status, demanda_id: c.demandaId || null }))));
         if (evento.fornecedores.length) inserts.push(supabaseClient.from('fornecedores').insert(
-            evento.fornecedores.map(f => ({ id: f.id, evento_id: eventoId, nome: f.nome, servico: f.servico, contato: f.contato, valor: f.valor, status_pagamento: f.statusPagamento }))));
+            evento.fornecedores.map(f => ({
+                id: f.id, evento_id: eventoId, nome: f.nome, servico: f.servico, nome_contato: f.nomeContato || null, contato: f.contato, valor: f.valor,
+                forma_pagamento: f.formaPagamento || null, status_pagamento: f.statusPagamento,
+                previsao_pagamento: f.previsaoPagamento || null, prazo_entrega: f.prazoEntrega || null
+            }))));
         if (evento.equipe.length) inserts.push(supabaseClient.from('equipe_itens').insert(
             evento.equipe.map(eq => ({ id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato }))));
         if (evento.patrocinios.length) inserts.push(supabaseClient.from('patrocinios').insert(
-            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, entregaveis: p.entregaveis, status_pagamento: p.statusPagamento }))));
+            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, status_pagamento: p.statusPagamento, previsao_pagamento: p.previsaoPagamento || null }))));
         if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
             evento.lotesIngresso.map(l => ({ id: l.id, evento_id: eventoId, nome: l.nome, preco_unitario: l.precoUnitario, quantidade_total: l.quantidadeTotal, inclui: l.inclui }))));
 
@@ -16844,7 +16916,7 @@
 
         lista.innerHTML = itens.map(item => `
             <div class="usuario-item">
-                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:12px;">${item.horario || '--:--'}</div>
+                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:${item.horarioFim ? '10px' : '12px'};">${item.horarioFim ? item.horario + '–' + item.horarioFim : (item.horario || '--:--')}</div>
                 <div class="usuario-item-info">
                     <div class="usuario-item-nome">${item.titulo}${item.bandaId ? ' <span class="usuario-badge-convite" style="background:var(--green-dark); color:#fff;">Apresentação</span>' : ''}${item.setor ? ` <span class="usuario-badge-convite">${item.setor}</span>` : ''}</div>
                     <div class="usuario-item-detalhe">${item.descricao || ''}</div>
@@ -16856,6 +16928,8 @@
             </div>`).join('');
     }
 
+    const PROGRAMACAO_SETORES_PADRAO = ['Palco Principal', 'Palco Externo', 'Bar', 'Restaurante', 'Recepção', 'Casa', 'Ambiente'];
+
     function abrirModalProgramacaoItem(id) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         const item = id ? (evento.programacao || []).find(i => i.id === id) : null;
@@ -16863,9 +16937,15 @@
         document.getElementById('programacao-item-titulo-modal').textContent = item ? 'Editar item da programação' : 'Novo item da programação';
         document.getElementById('programacao-item-id').value = item ? item.id : '';
         document.getElementById('programacao-item-horario').value = item ? item.horario : '';
-        document.getElementById('programacao-item-setor').value = item ? (item.setor || '') : '';
+        document.getElementById('programacao-item-horario-fim').value = item ? (item.horarioFim || '') : '';
         document.getElementById('programacao-item-titulo').value = item ? item.titulo : '';
         document.getElementById('programacao-item-descricao').value = item ? (item.descricao || '') : '';
+
+        const setorAtual = item ? (item.setor || '') : '';
+        const ehPadrao = PROGRAMACAO_SETORES_PADRAO.includes(setorAtual);
+        document.getElementById('programacao-item-setor').value = setorAtual && !ehPadrao ? 'outro' : (setorAtual || 'Palco Principal');
+        document.getElementById('programacao-item-setor-outro').value = !ehPadrao ? setorAtual : '';
+        programacaoItemSetorAtualizar();
 
         const bandaIdAtual = item ? (item.bandaId || '') : '';
         const selectBanda = document.getElementById('programacao-item-banda');
@@ -16876,6 +16956,11 @@
         const modal = document.getElementById('modal-programacao-item');
         modal.classList.remove('hidden');
         modal.classList.add('active');
+    }
+
+    function programacaoItemSetorAtualizar() {
+        const ehOutro = document.getElementById('programacao-item-setor').value === 'outro';
+        document.getElementById('programacao-item-setor-outro').classList.toggle('hidden', !ehOutro);
     }
 
     // Selecionar uma banda já preenche o título com o nome dela — só um
@@ -16903,13 +16988,18 @@
         const horario = document.getElementById('programacao-item-horario').value;
         const titulo = document.getElementById('programacao-item-titulo').value.trim();
         if (!horario || !titulo) {
-            alert('Horário e título são obrigatórios.');
+            alert('Horário de início e título são obrigatórios.');
             return;
         }
 
+        const setorSelecionado = document.getElementById('programacao-item-setor').value;
+        const setor = setorSelecionado === 'outro' ? document.getElementById('programacao-item-setor-outro').value.trim() : setorSelecionado;
+
         const dados = {
-            horario, titulo,
-            setor: document.getElementById('programacao-item-setor').value.trim(),
+            horario,
+            horarioFim: document.getElementById('programacao-item-horario-fim').value || null,
+            titulo,
+            setor,
             descricao: document.getElementById('programacao-item-descricao').value.trim(),
             bandaId: document.getElementById('programacao-item-banda').value || null
         };
@@ -16950,20 +17040,26 @@
 
         const ordenados = itens.slice().sort((a, b) => (a.status === 'feito') - (b.status === 'feito'));
 
-        lista.innerHTML = ordenados.map(item => `
+        lista.innerHTML = ordenados.map(item => {
+            const demandaVinculada = item.demandaId ? demandas.find(d => d.id === item.demandaId) : null;
+            const tagKanban = demandaVinculada
+                ? `<span class="usuario-badge-convite" style="background:var(--green-dark); color:#fff;">Kanban: ${STATUS_LABEL_DEMANDA[demandaVinculada.status] || demandaVinculada.status}</span>`
+                : '';
+            return `
             <div class="usuario-item">
                 <button class="btn-icon-acao ${item.status === 'feito' ? 'ativa' : ''}" onclick="alternarStatusChecklist('${item.id}')" title="${item.status === 'feito' ? 'Marcar como pendente' : 'Marcar como feito'}" style="${item.status === 'feito' ? 'background:#DCFCE7; color:#166534;' : ''}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </button>
                 <div class="usuario-item-info">
-                    <div class="usuario-item-nome" style="${item.status === 'feito' ? 'text-decoration:line-through; color:var(--warm-gray);' : ''}">${item.titulo}</div>
+                    <div class="usuario-item-nome" style="${item.status === 'feito' ? 'text-decoration:line-through; color:var(--warm-gray);' : ''}">${item.titulo}${tagKanban}</div>
                     <div class="usuario-item-detalhe">${item.responsavel ? 'Responsável: ' + item.responsavel : 'Sem responsável definido'}${item.prazo ? ' · Prazo: ' + new Date(item.prazo + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
                 </div>
                 <div class="usuario-item-acoes">
                     <button class="btn-icon-acao" onclick="abrirModalChecklistItem('${item.id}')" title="Editar">${ICONE_EDITAR}</button>
                     <button class="btn-icon-acao excluir" onclick="excluirChecklistItem('${item.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     async function alternarStatusChecklist(id) {
@@ -16985,6 +17081,14 @@
         document.getElementById('checklist-item-responsavel').value = item ? (item.responsavel || '') : '';
         document.getElementById('checklist-item-prazo').value = item ? (item.prazo || '') : '';
         document.getElementById('checklist-item-status').value = item ? item.status : 'pendente';
+
+        // Só mostra tarefas do quadro Kanban DESSE evento — vincular com
+        // tarefa de outro evento não faria sentido.
+        const demandasDoEvento = demandas.filter(d => d.quadroId === evento.quadroKanbanId);
+        const selectDemanda = document.getElementById('checklist-item-demanda');
+        selectDemanda.innerHTML = '<option value="">— Nenhuma —</option>' +
+            demandasDoEvento.map(d => `<option value="${d.id}">${d.titulo}</option>`).join('');
+        selectDemanda.value = item ? (item.demandaId || '') : '';
 
         const modal = document.getElementById('modal-checklist-item');
         modal.classList.remove('hidden');
@@ -17010,7 +17114,8 @@
             titulo,
             responsavel: document.getElementById('checklist-item-responsavel').value.trim(),
             prazo: document.getElementById('checklist-item-prazo').value,
-            status: document.getElementById('checklist-item-status').value
+            status: document.getElementById('checklist-item-status').value,
+            demandaId: document.getElementById('checklist-item-demanda').value || null
         };
 
         if (idExistente) {
@@ -17073,9 +17178,13 @@
         document.getElementById('fornecedor-id').value = f ? f.id : '';
         document.getElementById('fornecedor-nome').value = f ? f.nome : '';
         document.getElementById('fornecedor-servico').value = f ? (f.servico || '') : '';
+        document.getElementById('fornecedor-nome-contato').value = f ? (f.nomeContato || '') : '';
         document.getElementById('fornecedor-contato').value = f ? (f.contato || '') : '';
         document.getElementById('fornecedor-valor').value = f ? (f.valor || '') : '';
+        document.getElementById('fornecedor-forma-pagamento').value = f ? (f.formaPagamento || 'pix') : 'pix';
         document.getElementById('fornecedor-status-pagamento').value = f ? f.statusPagamento : 'pendente';
+        document.getElementById('fornecedor-previsao-pagamento').value = f ? (f.previsaoPagamento || '') : '';
+        document.getElementById('fornecedor-prazo-entrega').value = f ? (f.prazoEntrega || '') : '';
 
         const modal = document.getElementById('modal-fornecedor');
         modal.classList.remove('hidden');
@@ -17100,9 +17209,13 @@
         const dados = {
             nome,
             servico: document.getElementById('fornecedor-servico').value.trim(),
+            nomeContato: document.getElementById('fornecedor-nome-contato').value.trim(),
             contato: document.getElementById('fornecedor-contato').value.trim(),
             valor: document.getElementById('fornecedor-valor').value.trim(),
-            statusPagamento: document.getElementById('fornecedor-status-pagamento').value
+            formaPagamento: document.getElementById('fornecedor-forma-pagamento').value,
+            statusPagamento: document.getElementById('fornecedor-status-pagamento').value,
+            previsaoPagamento: document.getElementById('fornecedor-previsao-pagamento').value || null,
+            prazoEntrega: document.getElementById('fornecedor-prazo-entrega').value || null
         };
 
         if (idExistente) {
@@ -17317,7 +17430,9 @@
         document.getElementById('patrocinio-tipo').value = p ? p.tipo : 'Patrocinador';
         document.getElementById('patrocinio-valor-dinheiro').value = p ? (p.valorDinheiro ? String(p.valorDinheiro).replace('.', ',') : '') : '';
         document.getElementById('patrocinio-permuta').value = p ? (p.descricaoPermuta || '') : '';
+        document.getElementById('patrocinio-forma-pagamento').value = p ? (p.formaPagamento || 'pix') : 'pix';
         document.getElementById('patrocinio-status-pagamento').value = p ? p.statusPagamento : 'pendente';
+        document.getElementById('patrocinio-previsao-pagamento').value = p ? (p.previsaoPagamento || '') : '';
 
         document.querySelectorAll('.entregavel-check').forEach(chk => { chk.checked = false; });
         ['preEvento', 'duranteEvento', 'posEvento'].forEach(fase => {
@@ -17386,7 +17501,9 @@
             valorDinheiro: parseFloat(document.getElementById('patrocinio-valor-dinheiro').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
             descricaoPermuta: document.getElementById('patrocinio-permuta').value.trim(),
             entregaveis,
-            statusPagamento: document.getElementById('patrocinio-status-pagamento').value
+            formaPagamento: document.getElementById('patrocinio-forma-pagamento').value,
+            statusPagamento: document.getElementById('patrocinio-status-pagamento').value,
+            previsaoPagamento: document.getElementById('patrocinio-previsao-pagamento').value || null
         };
 
         if (idExistente) {
