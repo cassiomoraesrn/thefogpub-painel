@@ -2526,6 +2526,69 @@
             gap: 8px;
         }
 
+        /* Badge de horário da programação — pensado pra caber início e fim
+           sem espremer o texto numa bolinha redonda (que só funcionava com
+           um horário só). */
+        .prog-horario-badge {
+            background: var(--brown);
+            color: #fff;
+            border-radius: 10px;
+            padding: 5px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 58px;
+            flex-shrink: 0;
+            line-height: 1.2;
+            gap: 1px;
+        }
+        .prog-horario-badge .prog-horario-linha {
+            font-size: 12.5px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .prog-horario-badge .prog-horario-separador {
+            width: 14px;
+            height: 1px;
+            background: rgba(255,255,255,0.4);
+            margin: 2px 0;
+        }
+        .prog-horario-badge.so-inicio {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+        }
+        .prog-horario-badge.so-inicio .prog-horario-linha {
+            font-size: 13px;
+        }
+
+        /* Máscara de moeda (R$) — usada em todo campo de valor monetário
+           do sistema, pra manter formato consistente (1.234,56). */
+        .input-moeda-wrap {
+            display: flex;
+            align-items: stretch;
+        }
+        .input-moeda-prefixo {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            background: var(--beige);
+            border: 1.5px solid var(--line);
+            border-right: none;
+            border-radius: 6px 0 0 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--warm-gray);
+            flex-shrink: 0;
+        }
+        .input-moeda-wrap .form-input,
+        .input-moeda-wrap .input-obrigatorio {
+            border-radius: 0 6px 6px 0;
+        }
+        .perfil-modo-edicao .campo-edit.input-moeda-wrap { display: flex; }
+
         .apresentacao-item {
             display: grid;
             grid-template-columns: 90px 1fr 70px 110px;
@@ -8585,7 +8648,10 @@
                 </div>
                 <div class="form-row">
                     <label class="form-label">Cachê</label>
-                    <input type="text" id="editarbanda-cache" class="form-input" placeholder="Ex: R$ 1.500,00">
+                    <div class="input-moeda-wrap">
+                        <span class="input-moeda-prefixo">R$</span>
+                        <input type="text" id="editarbanda-cache" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                    </div>
                 </div>
                 <div class="form-row">
                     <label class="form-label">Sobre a banda</label>
@@ -9088,7 +9154,10 @@
                             <div class="rail-field">
                                 <div class="rail-field-label">Cachê</div>
                                 <div class="rail-field-value campo-view" id="view-cache">--</div>
-                                <input class="campo-edit edit-input" type="text" id="edit-cache" placeholder="Ex: R$ 1.500,00">
+                                <div class="campo-edit input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input class="edit-input" type="text" id="edit-cache" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                         </div>
 
@@ -10379,7 +10448,10 @@
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
                                 <label>Preço unitário <span class="campo-obrigatorio">*</span></label>
-                                <input type="text" id="lote-ingresso-preco" class="input-obrigatorio" placeholder="Ex: 45,00">
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="lote-ingresso-preco" class="input-obrigatorio" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                             <div class="demanda-campo">
                                 <label>Quantidade total</label>
@@ -10437,7 +10509,10 @@
                             </div>
                             <div class="demanda-campo">
                                 <label>Valor total</label>
-                                <input type="text" id="pedido-ingresso-valor" class="form-input" placeholder="Calculado automaticamente">
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="pedido-ingresso-valor" class="form-input" placeholder="Calculado automaticamente">
+                                </div>
                             </div>
                         </div>
                         <div class="demanda-campo">
@@ -10534,7 +10609,10 @@
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
                                 <label>Valor a pagar</label>
-                                <input type="text" id="fornecedor-valor" class="form-input" placeholder="Ex: R$ 800,00">
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="fornecedor-valor" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                             <div class="demanda-campo">
                                 <label>Forma de pagamento</label>
@@ -10737,7 +10815,10 @@
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
                                 <label>Valor em dinheiro</label>
-                                <input type="text" id="patrocinio-valor-dinheiro" class="form-input" placeholder="Ex: 3000,00 (0 se for só permuta)">
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="patrocinio-valor-dinheiro" class="form-input" placeholder="0,00 (deixe vazio se for só permuta)" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                             <div class="demanda-campo">
                                 <label>Forma de pagamento</label>
@@ -10768,6 +10849,13 @@
                         <div class="demanda-campo">
                             <label>Permuta (o que é oferecido em vez de dinheiro, se houver)</label>
                             <input type="text" id="patrocinio-permuta" class="form-input" placeholder="Ex: Chopp grátis pra equipe, divulgação cruzada...">
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Valor estimado da permuta</label>
+                            <div class="input-moeda-wrap">
+                                <span class="input-moeda-prefixo">R$</span>
+                                <input type="text" id="patrocinio-valor-permuta" class="form-input" placeholder="0,00 (deixe vazio se não souber estimar)" oninput="aplicarMascaraMoeda(this)">
+                            </div>
                         </div>
                         <div class="demanda-campo">
                             <label>Entregáveis (o que foi prometido em troca)</label>
@@ -10891,18 +10979,24 @@
                         <div class="demanda-campo-linha hidden" id="lancamento-quantidade-preco-wrap">
                             <div class="demanda-campo">
                                 <label>Quantidade</label>
-                                <input type="number" id="lancamento-quantidade" class="form-input" min="0" step="0.01" value="1" onchange="lancamentoAtualizarValorTotal()">
+                                <input type="number" id="lancamento-quantidade" class="form-input" min="0" step="0.01" value="1" oninput="lancamentoAtualizarValorTotal()">
                             </div>
                             <div class="demanda-campo">
                                 <label>Preço unitário</label>
-                                <input type="text" id="lancamento-preco-unitario" class="form-input" placeholder="Ex: 150,00" onchange="lancamentoAtualizarValorTotal()">
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="lancamento-preco-unitario" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); lancamentoAtualizarValorTotal()">
+                                </div>
                             </div>
                         </div>
 
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
                                 <label>Valor <span class="campo-obrigatorio">*</span></label>
-                                <input type="text" id="lancamento-valor" class="input-obrigatorio" placeholder="Ex: 1500,00">
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="lancamento-valor" class="input-obrigatorio" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                             <div class="demanda-campo">
                                 <label>Data</label>
@@ -15873,7 +15967,7 @@
             equipe: equipeR.data.filter(eq => eq.evento_id === row.id)
                 .map(eq => ({ id: eq.id, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato })),
             patrocinios: patroR.data.filter(p => p.evento_id === row.id)
-                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, statusPagamento: p.status_pagamento, previsaoPagamento: p.previsao_pagamento })),
+                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', valorPermuta: p.valor_permuta ? parseFloat(p.valor_permuta) : null, entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, statusPagamento: p.status_pagamento, previsaoPagamento: p.previsao_pagamento })),
             lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
                 .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
             pedidosIngresso: pedidosR.data.filter(p => p.evento_id === row.id)
@@ -15935,7 +16029,7 @@
         if (evento.equipe.length) inserts.push(supabaseClient.from('equipe_itens').insert(
             evento.equipe.map(eq => ({ id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato }))));
         if (evento.patrocinios.length) inserts.push(supabaseClient.from('patrocinios').insert(
-            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, status_pagamento: p.statusPagamento, previsao_pagamento: p.previsaoPagamento || null }))));
+            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, valor_permuta: p.valorPermuta || null, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, status_pagamento: p.statusPagamento, previsao_pagamento: p.previsaoPagamento || null }))));
         if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
             evento.lotesIngresso.map(l => ({ id: l.id, evento_id: eventoId, nome: l.nome, preco_unitario: l.precoUnitario, quantidade_total: l.quantidadeTotal, inclui: l.inclui }))));
 
@@ -16871,6 +16965,19 @@
         return (valor < 0 ? '-R$ ' : 'R$ ') + Math.abs(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // Máscara de moeda pra campos de input: digita só números, formata
+    // sozinho como 1.234,56 conforme a pessoa vai digitando (trata os
+    // dígitos como centavos, igual maquininha de cartão).
+    function aplicarMascaraMoeda(input) {
+        let digitos = input.value.replace(/\D/g, '');
+        if (!digitos) { input.value = ''; return; }
+        digitos = digitos.replace(/^0+(?=\d)/, '');
+        const valor = (parseInt(digitos, 10) / 100).toFixed(2);
+        const partes = valor.split('.');
+        partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        input.value = partes.join(',');
+    }
+
     function eventoCalcularLucro(evento) {
         const lancamentos = (evento.financeiro && evento.financeiro.lancamentos) || [];
         const receitas = lancamentos.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
@@ -16916,7 +17023,10 @@
 
         lista.innerHTML = itens.map(item => `
             <div class="usuario-item">
-                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:${item.horarioFim ? '10px' : '12px'};">${item.horarioFim ? item.horario + '–' + item.horarioFim : (item.horario || '--:--')}</div>
+                <div class="prog-horario-badge ${item.horarioFim ? '' : 'so-inicio'}">
+                    <span class="prog-horario-linha">${item.horario || '--:--'}</span>
+                    ${item.horarioFim ? `<span class="prog-horario-separador"></span><span class="prog-horario-linha">${item.horarioFim}</span>` : ''}
+                </div>
                 <div class="usuario-item-info">
                     <div class="usuario-item-nome">${item.titulo}${item.bandaId ? ' <span class="usuario-badge-convite" style="background:var(--green-dark); color:#fff;">Apresentação</span>' : ''}${item.setor ? ` <span class="usuario-badge-convite">${item.setor}</span>` : ''}</div>
                     <div class="usuario-item-detalhe">${item.descricao || ''}</div>
@@ -17430,6 +17540,7 @@
         document.getElementById('patrocinio-tipo').value = p ? p.tipo : 'Patrocinador';
         document.getElementById('patrocinio-valor-dinheiro').value = p ? (p.valorDinheiro ? String(p.valorDinheiro).replace('.', ',') : '') : '';
         document.getElementById('patrocinio-permuta').value = p ? (p.descricaoPermuta || '') : '';
+        document.getElementById('patrocinio-valor-permuta').value = p && p.valorPermuta ? String(p.valorPermuta).replace('.', ',') : '';
         document.getElementById('patrocinio-forma-pagamento').value = p ? (p.formaPagamento || 'pix') : 'pix';
         document.getElementById('patrocinio-status-pagamento').value = p ? p.statusPagamento : 'pendente';
         document.getElementById('patrocinio-previsao-pagamento').value = p ? (p.previsaoPagamento || '') : '';
@@ -17500,6 +17611,7 @@
             nivel,
             valorDinheiro: parseFloat(document.getElementById('patrocinio-valor-dinheiro').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
             descricaoPermuta: document.getElementById('patrocinio-permuta').value.trim(),
+            valorPermuta: parseFloat(document.getElementById('patrocinio-valor-permuta').value.trim().replace(/\./g, '').replace(',', '.')) || null,
             entregaveis,
             formaPagamento: document.getElementById('patrocinio-forma-pagamento').value,
             statusPagamento: document.getElementById('patrocinio-status-pagamento').value,
