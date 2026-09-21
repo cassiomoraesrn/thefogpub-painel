@@ -10633,6 +10633,12 @@
                             </div>
                         </div>
                         <div class="demanda-campo">
+                            <label>É uma apresentação de banda?</label>
+                            <select id="programacao-item-banda" class="form-input" onchange="programacaoItemSelecionarBanda()">
+                                <option value="">Não — é outro tipo de item</option>
+                            </select>
+                        </div>
+                        <div class="demanda-campo">
                             <label>Título <span class="campo-obrigatorio">*</span></label>
                             <input type="text" id="programacao-item-titulo" class="input-obrigatorio" placeholder="Ex: Abertura dos portões, Banda X">
                         </div>
@@ -15703,7 +15709,7 @@
             gestaoCompletaAtiva: true,
             quadroKanbanId: row.quadro_kanban_id,
             programacao: progR.data.filter(p => p.evento_id === row.id)
-                .map(p => ({ id: p.id, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor })),
+                .map(p => ({ id: p.id, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor, bandaId: p.banda_id || null })),
             checklist: checkR.data.filter(c => c.evento_id === row.id)
                 .map(c => ({ id: c.id, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo, status: c.status })),
             fornecedores: fornR.data.filter(f => f.evento_id === row.id)
@@ -15755,7 +15761,7 @@
 
         const inserts = [];
         if (evento.programacao.length) inserts.push(supabaseClient.from('programacao_itens').insert(
-            evento.programacao.map(p => ({ id: p.id, evento_id: eventoId, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor }))));
+            evento.programacao.map(p => ({ id: p.id, evento_id: eventoId, horario: p.horario, titulo: p.titulo, descricao: p.descricao, setor: p.setor, banda_id: p.bandaId || null }))));
         if (evento.checklist.length) inserts.push(supabaseClient.from('checklist_itens').insert(
             evento.checklist.map(c => ({ id: c.id, evento_id: eventoId, titulo: c.titulo, responsavel: c.responsavel, prazo: c.prazo || null, status: c.status }))));
         if (evento.fornecedores.length) inserts.push(supabaseClient.from('fornecedores').insert(
@@ -16494,7 +16500,7 @@
             if (!b.horarioInicio) return;
             programacaoInicial.push({
                 id: 'prog_auto_' + b.bandaId, horario: b.horarioInicio,
-                titulo: nomeBandaPorId(b.bandaId), descricao: '', setor: 'Palco principal'
+                titulo: nomeBandaPorId(b.bandaId), descricao: '', setor: 'Palco principal', bandaId: b.bandaId
             });
         });
         programacaoInicial.sort((a, b) => (a.horario || '').localeCompare(b.horario || ''));
@@ -16740,7 +16746,7 @@
             <div class="usuario-item">
                 <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:12px;">${item.horario || '--:--'}</div>
                 <div class="usuario-item-info">
-                    <div class="usuario-item-nome">${item.titulo}${item.setor ? ` <span class="usuario-badge-convite">${item.setor}</span>` : ''}</div>
+                    <div class="usuario-item-nome">${item.titulo}${item.bandaId ? ' <span class="usuario-badge-convite" style="background:var(--green-dark); color:#fff;">Apresentação</span>' : ''}${item.setor ? ` <span class="usuario-badge-convite">${item.setor}</span>` : ''}</div>
                     <div class="usuario-item-detalhe">${item.descricao || ''}</div>
                 </div>
                 <div class="usuario-item-acoes">
@@ -16761,9 +16767,25 @@
         document.getElementById('programacao-item-titulo').value = item ? item.titulo : '';
         document.getElementById('programacao-item-descricao').value = item ? (item.descricao || '') : '';
 
+        const bandaIdAtual = item ? (item.bandaId || '') : '';
+        const selectBanda = document.getElementById('programacao-item-banda');
+        selectBanda.innerHTML = '<option value="">Não — é outro tipo de item</option>' +
+            formBandaCandidatas(bandaIdAtual).map(b => `<option value="${b.id}">${b.nome}</option>`).join('');
+        selectBanda.value = bandaIdAtual;
+
         const modal = document.getElementById('modal-programacao-item');
         modal.classList.remove('hidden');
         modal.classList.add('active');
+    }
+
+    // Selecionar uma banda já preenche o título com o nome dela — só um
+    // ponto de partida, ainda dá pra editar o texto depois (ex: "Banda X
+    // — Set acústico").
+    function programacaoItemSelecionarBanda() {
+        const select = document.getElementById('programacao-item-banda');
+        if (!select.value) return;
+        const banda = bandasPerfis[select.value];
+        if (banda) document.getElementById('programacao-item-titulo').value = banda.nome;
     }
 
     function fecharModalProgramacaoItem() {
@@ -16788,7 +16810,8 @@
         const dados = {
             horario, titulo,
             setor: document.getElementById('programacao-item-setor').value.trim(),
-            descricao: document.getElementById('programacao-item-descricao').value.trim()
+            descricao: document.getElementById('programacao-item-descricao').value.trim(),
+            bandaId: document.getElementById('programacao-item-banda').value || null
         };
 
         if (idExistente) {
