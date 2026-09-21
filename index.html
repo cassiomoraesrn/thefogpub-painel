@@ -10107,6 +10107,7 @@
                                 <svg class="evento-gestao-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </button>
                             <div class="evento-gestao-nav-subitens" id="evento-gestao-nav-ingressos-subitens">
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="ingressos-resumo" onclick="eventoGestaoTrocarAba('ingressos-resumo', this)">Resumo</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="ingressos-lotes" onclick="eventoGestaoTrocarAba('ingressos-lotes', this)">Lotes de ingresso</button>
                                 <button type="button" class="evento-gestao-nav-subitem" data-view="ingressos-pedidos" onclick="eventoGestaoTrocarAba('ingressos-pedidos', this)">Pedidos</button>
                             </div>
@@ -10197,6 +10198,25 @@
                         </div>
 
                         <!-- FINANCEIRO: LOTES DE INGRESSO -->
+                        <!-- INGRESSOS: RESUMO (dashboard visual) -->
+                        <div id="evento-gestao-view-ingressos-resumo" class="marketing-view hidden">
+                            <div class="dashboard-cards" id="ing-resumo-cards" style="margin-bottom:24px;"></div>
+                            <div class="dashboard-graficos-grid">
+                                <div class="grafico-card">
+                                    <h3>Vendas por lote</h3>
+                                    <div class="grafico-canvas-wrap">
+                                        <canvas id="chart-ing-lotes"></canvas>
+                                    </div>
+                                </div>
+                                <div class="grafico-card">
+                                    <h3>Vendas ao longo do tempo</h3>
+                                    <div class="grafico-canvas-wrap">
+                                        <canvas id="chart-ing-tempo"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="evento-gestao-view-ingressos-lotes" class="marketing-view hidden">
                             <div class="aparencia-secao-titulo" style="margin-bottom:14px;">
                                 <p>Cadastre os lotes pra poder vincular a venda a cada um deles no lançamento de receita.</p>
@@ -15732,6 +15752,7 @@
                 eventoGestaoRenderPatrocinios();
                 eventoGestaoRenderLotes();
                 eventoGestaoRenderPedidos();
+                eventoGestaoRenderDashboardIngressos();
                 eventoGestaoRenderFinanceiro();
             }
         }
@@ -16352,6 +16373,17 @@
         });
         programacaoInicial.sort((a, b) => (a.horario || '').localeCompare(b.horario || ''));
 
+        // Lotes de ingresso padrão — o preço é só um ponto de partida
+        // pra a pessoa ajustar; o importante é já abrir com a estrutura
+        // de 3 faixas (mais barato no início, mais caro perto da data)
+        // em vez de uma tela vazia.
+        const agora = Date.now();
+        const lotesIniciais = [
+            { id: 'lote_' + agora + '_1', nome: 'Lote 1', precoUnitario: 35, quantidadeTotal: 100, inclui: '' },
+            { id: 'lote_' + agora + '_2', nome: 'Lote 2', precoUnitario: 45, quantidadeTotal: 100, inclui: '' },
+            { id: 'lote_' + agora + '_3', nome: 'Últimos Ingressos', precoUnitario: 60, quantidadeTotal: 50, inclui: '' }
+        ];
+
         const novoEventoGerenciado = {
             id: eventoAgenda.id,
             nomeEvento: nomeQuadro,
@@ -16359,7 +16391,7 @@
             descricaoEvento: eventoAgenda.descricaoEvento || '',
             gestaoCompletaAtiva: true,
             quadroKanbanId: novoQuadroId,
-            programacao: programacaoInicial, checklist: [], fornecedores: [], equipe: [], patrocinios: [], lotesIngresso: [],
+            programacao: programacaoInicial, checklist: [], fornecedores: [], equipe: [], patrocinios: [], lotesIngresso: lotesIniciais,
             financeiro: { lancamentos: [] }
         };
 
@@ -16448,6 +16480,7 @@
         eventoGestaoRenderPatrocinios();
         eventoGestaoRenderLotes();
         eventoGestaoRenderPedidos();
+        eventoGestaoRenderDashboardIngressos();
         eventoGestaoRenderFinanceiro();
 
         document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
@@ -17245,6 +17278,131 @@
 
     // ---------- PEDIDOS DE INGRESSO ----------
     const PEDIDO_STATUS_LABEL = { reservado: 'Reservado', pago: 'Pago', cancelado: 'Cancelado' };
+
+    let chartIngressosLotes = null;
+    let chartIngressosTempo = null;
+
+    function eventoGestaoRenderDashboardIngressos() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const cardsContainer = document.getElementById('ing-resumo-cards');
+        if (!evento || !cardsContainer) return;
+
+        const lotes = evento.lotesIngresso || [];
+        const pedidos = (evento.pedidosIngresso || []).filter(p => p.status !== 'cancelado');
+        const pedidosPagos = pedidos.filter(p => p.status === 'pago');
+        const pedidosReservados = pedidos.filter(p => p.status === 'reservado');
+
+        const totalVendido = pedidos.reduce((s, p) => s + (p.quantidade || 1), 0);
+        const totalCapacidade = lotes.reduce((s, l) => s + (l.quantidadeTotal || 0), 0);
+        const receitaConfirmada = pedidosPagos.reduce((s, p) => s + p.valorTotal, 0);
+        const qtdPendente = pedidosReservados.reduce((s, p) => s + (p.quantidade || 1), 0);
+        const ocupacao = totalCapacidade > 0 ? Math.round((totalVendido / totalCapacidade) * 100) : 0;
+
+        cardsContainer.innerHTML = `
+            <div class="card">
+                <div class="card-icon ingresso">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9a3 3 0 0 0 3-3h12a3 3 0 0 0 3 3v6a3 3 0 0 0-3 3H6a3 3 0 0 0-3-3z"></path><circle cx="12" cy="12" r="2"></circle></svg>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Ingressos vendidos</p>
+                    <p class="card-value">${totalVendido}${totalCapacidade ? ' / ' + totalCapacidade : ''}</p>
+                    <p class="card-sub">${pedidos.length} pedido${pedidos.length !== 1 ? 's' : ''} no total</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon receita">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Receita confirmada</p>
+                    <p class="card-value">${formatarMoeda(receitaConfirmada)}</p>
+                    <p class="card-sub">Só pedidos já pagos</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon patrocinio">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Aguardando pagamento</p>
+                    <p class="card-value">${qtdPendente}</p>
+                    <p class="card-sub">${pedidosReservados.length} pedido${pedidosReservados.length !== 1 ? 's' : ''} reservado${pedidosReservados.length !== 1 ? 's' : ''}</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-icon evento">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path></svg>
+                </div>
+                <div class="card-content">
+                    <p class="card-title">Ocupação</p>
+                    <p class="card-value">${ocupacao}%</p>
+                    <p class="card-sub">Do total disponível nos lotes</p>
+                </div>
+            </div>`;
+
+        // Gráfico: vendas por lote (barras)
+        const canvasLotes = document.getElementById('chart-ing-lotes');
+        if (canvasLotes && typeof Chart !== 'undefined') {
+            if (chartIngressosLotes) chartIngressosLotes.destroy();
+            if (lotes.length === 0) {
+                canvasLotes.parentElement.innerHTML = '<div class="bandas-vazio" style="height:100%; display:flex; align-items:center; justify-content:center;">Cadastre lotes pra ver o gráfico.</div>';
+            } else {
+                const cores = ['#996633', '#24411E', '#F59E0B', '#3B82F6', '#8A8578'];
+                chartIngressosLotes = new Chart(canvasLotes, {
+                    type: 'bar',
+                    data: {
+                        labels: lotes.map(l => l.nome),
+                        datasets: [{
+                            data: lotes.map(l => eventoContarVendidosDoLote(evento, l.id)),
+                            backgroundColor: lotes.map((l, i) => cores[i % cores.length]),
+                            borderRadius: 6,
+                            maxBarThickness: 48
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', padding: 10, cornerRadius: 6, displayColors: false, callbacks: { label: (ctx) => ctx.parsed.y + ' vendido' + (ctx.parsed.y !== 1 ? 's' : '') } } },
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0, color: '#8A8578', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { color: '#8A8578', font: { size: 11, weight: '600' } }, grid: { display: false } } }
+                    }
+                });
+            }
+        }
+
+        // Gráfico: vendas ao longo do tempo (linha, acumulado por dia)
+        const canvasTempo = document.getElementById('chart-ing-tempo');
+        if (canvasTempo && typeof Chart !== 'undefined') {
+            if (chartIngressosTempo) chartIngressosTempo.destroy();
+            if (pedidos.length === 0) {
+                canvasTempo.parentElement.innerHTML = '<div class="bandas-vazio" style="height:100%; display:flex; align-items:center; justify-content:center;">Nenhuma venda registrada ainda.</div>';
+            } else {
+                const porDia = {};
+                pedidos.forEach(p => {
+                    const dia = (p.criadoEm || '').slice(0, 10);
+                    porDia[dia] = (porDia[dia] || 0) + (p.quantidade || 1);
+                });
+                const dias = Object.keys(porDia).sort();
+                let acumulado = 0;
+                const acumulados = dias.map(d => { acumulado += porDia[d]; return acumulado; });
+
+                chartIngressosTempo = new Chart(canvasTempo, {
+                    type: 'line',
+                    data: {
+                        labels: dias.map(d => new Date(d + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })),
+                        datasets: [{
+                            data: acumulados,
+                            borderColor: '#996633', backgroundColor: 'rgba(153,102,51,0.12)',
+                            fill: true, tension: 0.3, pointRadius: 3, pointBackgroundColor: '#996633'
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.85)', padding: 10, cornerRadius: 6, displayColors: false, callbacks: { label: (ctx) => ctx.parsed.y + ' ingressos acumulados' } } },
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0, color: '#8A8578', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.05)' } }, x: { ticks: { color: '#8A8578', font: { size: 11 } }, grid: { display: false } } }
+                    }
+                });
+            }
+        }
+    }
 
     function eventoGestaoRenderPedidos() {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
