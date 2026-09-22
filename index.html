@@ -10683,6 +10683,23 @@
                             <label>Contato</label>
                             <input type="text" id="equipe-item-contato" class="form-input" placeholder="Telefone">
                         </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Valor/diária</label>
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="equipe-item-valor" class="form-input" placeholder="0,00 (deixe vazio se não for pago por aqui)" oninput="aplicarMascaraMoeda(this)">
+                                </div>
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Status do pagamento</label>
+                                <select id="equipe-item-status-pagamento" class="form-input">
+                                    <option value="pendente">Pendente</option>
+                                    <option value="parcial">Parcial</option>
+                                    <option value="pago">Pago</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-evento-footer">
                         <button class="btn-cancelar-edicao" onclick="fecharModalEquipeItem()">Cancelar</button>
@@ -15965,13 +15982,13 @@
                     previsaoPagamento: f.previsao_pagamento, prazoEntrega: f.prazo_entrega
                 })),
             equipe: equipeR.data.filter(eq => eq.evento_id === row.id)
-                .map(eq => ({ id: eq.id, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato })),
+                .map(eq => ({ id: eq.id, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato, valor: eq.valor, statusPagamento: eq.status_pagamento })),
             patrocinios: patroR.data.filter(p => p.evento_id === row.id)
                 .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', valorPermuta: p.valor_permuta ? parseFloat(p.valor_permuta) : null, entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, statusPagamento: p.status_pagamento, previsaoPagamento: p.previsao_pagamento })),
             lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
                 .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
             pedidosIngresso: pedidosR.data.filter(p => p.evento_id === row.id)
-                .map(p => ({ id: p.id, loteId: p.lote_id, nomeComprador: p.nome_comprador, whatsappComprador: p.whatsapp_comprador, emailComprador: p.email_comprador || '', quantidade: p.quantidade, valorTotal: parseFloat(p.valor_total), status: p.status, criadoEm: p.criado_em })),
+                .map(p => ({ id: p.id, loteId: p.lote_id, nomeComprador: p.nome_comprador, whatsappComprador: p.whatsapp_comprador, emailComprador: p.email_comprador || '', quantidade: p.quantidade, valorTotal: parseFloat(p.valor_total), status: p.status, clienteId: p.cliente_id || null, criadoEm: p.criado_em })),
             financeiro: {
                 lancamentos: lancR.data.filter(l => l.evento_id === row.id)
                     .map(l => ({
@@ -16027,7 +16044,7 @@
                 previsao_pagamento: f.previsaoPagamento || null, prazo_entrega: f.prazoEntrega || null
             }))));
         if (evento.equipe.length) inserts.push(supabaseClient.from('equipe_itens').insert(
-            evento.equipe.map(eq => ({ id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato }))));
+            evento.equipe.map(eq => ({ id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato, valor: eq.valor || null, status_pagamento: eq.statusPagamento || null }))));
         if (evento.patrocinios.length) inserts.push(supabaseClient.from('patrocinios').insert(
             evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, valor_permuta: p.valorPermuta || null, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, status_pagamento: p.statusPagamento, previsao_pagamento: p.previsaoPagamento || null }))));
         if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
@@ -16048,7 +16065,7 @@
         }
         if ((evento.pedidosIngresso || []).length) {
             insertsFinal.push(supabaseClient.from('pedidos_ingresso').insert(
-                evento.pedidosIngresso.map(p => ({ id: p.id, evento_id: eventoId, lote_id: p.loteId || null, nome_comprador: p.nomeComprador, whatsapp_comprador: p.whatsappComprador, email_comprador: p.emailComprador || null, quantidade: p.quantidade, valor_total: p.valorTotal, status: p.status, criado_em: p.criadoEm || new Date().toISOString() }))));
+                evento.pedidosIngresso.map(p => ({ id: p.id, evento_id: eventoId, lote_id: p.loteId || null, nome_comprador: p.nomeComprador, whatsapp_comprador: p.whatsappComprador, email_comprador: p.emailComprador || null, quantidade: p.quantidade, valor_total: p.valorTotal, status: p.status, cliente_id: p.clienteId || null, criado_em: p.criadoEm || new Date().toISOString() }))));
         }
         await Promise.all(insertsFinal);
     }
@@ -16062,9 +16079,34 @@
             id: pedido.id, evento_id: pedido.eventoId, lote_id: pedido.loteId || null,
             nome_comprador: pedido.nomeComprador, whatsapp_comprador: pedido.whatsappComprador,
             email_comprador: pedido.emailComprador || null, quantidade: pedido.quantidade,
-            valor_total: pedido.valorTotal, status: pedido.status,
+            valor_total: pedido.valorTotal, status: pedido.status, cliente_id: pedido.clienteId || null,
             criado_em: pedido.criadoEm || new Date().toISOString()
         });
+    }
+
+    // Todo comprador de ingresso vira Cliente automaticamente — casa por
+    // WhatsApp com quem já existe (mesma regra usada no cadastro manual),
+    // ou cria um cliente novo com origem "importado" se for a primeira
+    // compra dessa pessoa.
+    async function vincularOuCriarClienteDoPedido(nome, whatsapp, email) {
+        const whatsappNormalizado = whatsapp.replace(/\D/g, '');
+        let cliente = clientes.find(c => c.whatsapp.replace(/\D/g, '') === whatsappNormalizado);
+        if (cliente) {
+            if (!cliente.email && email) {
+                cliente.email = email;
+                await sincronizarCliente(cliente.id);
+            }
+            return cliente.id;
+        }
+        const novoClienteId = 'cliente_' + Date.now();
+        cliente = {
+            id: novoClienteId, nome, whatsapp, email: email || '',
+            dataNascimento: null, genero: '', instagram: '', observacoes: '',
+            origem: 'importado', criadoEm: new Date().toISOString()
+        };
+        clientes.push(cliente);
+        await sincronizarCliente(novoClienteId);
+        return novoClienteId;
     }
 
     async function excluirPedidoIngressoSupabase(id) {
@@ -17089,6 +17131,31 @@
         modal.classList.remove('active');
     }
 
+    // O cachê já cadastrado no perfil da banda vira custo automático quando
+    // ela é vinculada a um item de programação — sem precisar digitar de
+    // novo o mesmo valor no financeiro.
+    function sincronizarLancamentoDeBandaProgramacao(evento, item) {
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+        const idLancamento = 'lanc_prog_' + item.id;
+        const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
+        const banda = item.bandaId ? bandasPerfis[item.bandaId] : null;
+        const valorNum = banda ? (parseFloat(String(banda.cache || '').replace(/\./g, '').replace(',', '.')) || 0) : 0;
+
+        if (!valorNum) {
+            if (existente) evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== idLancamento);
+            return;
+        }
+
+        const dados = {
+            tipo: 'custo_fixo',
+            descricao: `Cachê — ${banda.nome} (${item.horario}${item.horarioFim ? '–' + item.horarioFim : ''})`,
+            valor: valorNum,
+            data: existente ? existente.data : new Date().toISOString().slice(0, 10)
+        };
+        if (existente) Object.assign(existente, dados);
+        else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
+    }
+
     async function salvarProgramacaoItem() {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
@@ -17114,25 +17181,35 @@
             bandaId: document.getElementById('programacao-item-banda').value || null
         };
 
+        let itemSalvo;
         if (idExistente) {
-            const item = evento.programacao.find(i => i.id === idExistente);
-            if (item) Object.assign(item, dados);
+            itemSalvo = evento.programacao.find(i => i.id === idExistente);
+            if (itemSalvo) Object.assign(itemSalvo, dados);
         } else {
-            evento.programacao.push({ id: 'prog_' + Date.now(), ...dados });
+            itemSalvo = { id: 'prog_' + Date.now(), ...dados };
+            evento.programacao.push(itemSalvo);
         }
+
+        sincronizarLancamentoDeBandaProgramacao(evento, itemSalvo);
 
         await sincronizarEventoGerenciado(evento.id);
         fecharModalProgramacaoItem();
         eventoGestaoRenderProgramacao();
+        eventoGestaoRenderFinanceiro();
+        eventoGestaoRenderResumoFinanceiro();
     }
 
     async function excluirProgramacaoItem(id) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        customConfirm('Excluir item da programação?', 'Essa ação não pode ser desfeita.', async () => {
+        customConfirm('Excluir item da programação?', 'Essa ação não pode ser desfeita. Se tinha cachê de banda vinculado, o custo no financeiro também será removido.', async () => {
             evento.programacao = (evento.programacao || []).filter(i => i.id !== id);
+            evento.financeiro = evento.financeiro || { lancamentos: [] };
+            evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== 'lanc_prog_' + id);
             await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderProgramacao();
+            eventoGestaoRenderFinanceiro();
+            eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
     }
 
@@ -17453,6 +17530,8 @@
         document.getElementById('equipe-item-funcao').value = p ? (p.funcao || '') : '';
         document.getElementById('equipe-item-horario').value = p ? (p.horario || '') : '';
         document.getElementById('equipe-item-contato').value = p ? (p.contato || '') : '';
+        document.getElementById('equipe-item-valor').value = p ? (p.valor || '') : '';
+        document.getElementById('equipe-item-status-pagamento').value = p ? (p.statusPagamento || 'pendente') : 'pendente';
 
         const modal = document.getElementById('modal-equipe-item');
         modal.classList.remove('hidden');
@@ -17463,6 +17542,31 @@
         const modal = document.getElementById('modal-equipe-item');
         modal.classList.add('hidden');
         modal.classList.remove('active');
+    }
+
+    // Mesmo princípio de fornecedor/patrocínio/banda: se tem valor, vira
+    // custo automático — assim uma diária de segurança ou de bar entra no
+    // financeiro sem precisar lançar duas vezes.
+    function sincronizarLancamentoDeEquipe(evento, pessoa) {
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+        const idLancamento = 'lanc_equipe_' + pessoa.id;
+        const valorNum = parseFloat(String(pessoa.valor || '').replace(/\./g, '').replace(',', '.')) || 0;
+        const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
+
+        if (!valorNum) {
+            if (existente) evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== idLancamento);
+            return;
+        }
+
+        const dados = {
+            tipo: 'custo_fixo',
+            descricao: `Equipe — ${pessoa.nome}${pessoa.funcao ? ' (' + pessoa.funcao + ')' : ''}`,
+            valor: valorNum,
+            data: existente ? existente.data : new Date().toISOString().slice(0, 10),
+            statusPagamento: pessoa.statusPagamento || 'pendente'
+        };
+        if (existente) Object.assign(existente, dados);
+        else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
     }
 
     async function salvarEquipeItem() {
@@ -17478,28 +17582,40 @@
             nome,
             funcao: document.getElementById('equipe-item-funcao').value.trim(),
             horario: document.getElementById('equipe-item-horario').value.trim(),
-            contato: document.getElementById('equipe-item-contato').value.trim()
+            contato: document.getElementById('equipe-item-contato').value.trim(),
+            valor: document.getElementById('equipe-item-valor').value.trim(),
+            statusPagamento: document.getElementById('equipe-item-status-pagamento').value
         };
 
+        let pessoaSalva;
         if (idExistente) {
-            const p = evento.equipe.find(x => x.id === idExistente);
-            if (p) Object.assign(p, dados);
+            pessoaSalva = evento.equipe.find(x => x.id === idExistente);
+            if (pessoaSalva) Object.assign(pessoaSalva, dados);
         } else {
-            evento.equipe.push({ id: 'equipe_' + Date.now(), ...dados });
+            pessoaSalva = { id: 'equipe_' + Date.now(), ...dados };
+            evento.equipe.push(pessoaSalva);
         }
+
+        sincronizarLancamentoDeEquipe(evento, pessoaSalva);
 
         await sincronizarEventoGerenciado(evento.id);
         fecharModalEquipeItem();
         eventoGestaoRenderEquipe();
+        eventoGestaoRenderFinanceiro();
+        eventoGestaoRenderResumoFinanceiro();
     }
 
     async function excluirEquipeItem(id) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        customConfirm('Remover essa pessoa da escalação?', 'Essa ação não pode ser desfeita.', async () => {
+        customConfirm('Remover essa pessoa da escalação?', 'Essa ação não pode ser desfeita. Se tinha valor lançado, o custo no financeiro também será removido.', async () => {
             evento.equipe = (evento.equipe || []).filter(x => x.id !== id);
+            evento.financeiro = evento.financeiro || { lancamentos: [] };
+            evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== 'lanc_equipe_' + id);
             await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderEquipe();
+            eventoGestaoRenderFinanceiro();
+            eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
     }
 
@@ -18048,6 +18164,9 @@
             status: document.getElementById('pedido-ingresso-status').value,
             criadoEm: new Date().toISOString()
         };
+
+        novoPedido.clienteId = await vincularOuCriarClienteDoPedido(nome, whatsapp, novoPedido.emailComprador);
+        clientesRenderLista();
 
         evento.pedidosIngresso = evento.pedidosIngresso || [];
         evento.pedidosIngresso.push(novoPedido);
