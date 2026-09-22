@@ -17095,11 +17095,13 @@
     // receber: lançamento, fornecedor, patrocínio, equipe.
     // Alguns módulos guardam valor como número (lançamento, patrocínio) e
     // outros como texto formatado (fornecedor, equipe) — normaliza os dois
-    // casos antes de comparar.
+    // casos antes de comparar. Também tolera "R$" embutido no texto (dados
+    // antigos, de antes da máscara separar o prefixo do valor).
     function normalizarValorMonetario(v) {
         if (typeof v === 'number') return v;
         if (!v) return 0;
-        return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+        const limpo = String(v).replace(/[^\d.,-]/g, '');
+        return parseFloat(limpo.replace(/\./g, '').replace(',', '.')) || 0;
     }
 
     function statusPagamentoInfo(valorTotal, valorPago) {
@@ -17229,7 +17231,7 @@
         const idLancamento = 'lanc_prog_' + item.id;
         const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
         const banda = item.bandaId ? bandasPerfis[item.bandaId] : null;
-        const valorNum = banda ? (parseFloat(String(banda.cache || '').replace(/\./g, '').replace(',', '.')) || 0) : 0;
+        const valorNum = banda ? normalizarValorMonetario(banda.cache) : 0;
 
         if (!valorNum) {
             if (existente) evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== idLancamento);
@@ -17520,7 +17522,7 @@
     function sincronizarLancamentoDeFornecedor(evento, fornecedor) {
         evento.financeiro = evento.financeiro || { lancamentos: [] };
         const idLancamento = 'lanc_fornecedor_' + fornecedor.id;
-        const valorNum = parseFloat(String(fornecedor.valor || '').replace(/\./g, '').replace(',', '.')) || 0;
+        const valorNum = normalizarValorMonetario(fornecedor.valor);
         const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
 
         if (!valorNum) {
