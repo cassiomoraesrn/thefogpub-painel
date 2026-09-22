@@ -10628,12 +10628,11 @@
                         </div>
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
-                                <label>Status do pagamento</label>
-                                <select id="fornecedor-status-pagamento" class="form-input">
-                                    <option value="pendente">Pendente</option>
-                                    <option value="parcial">Parcial</option>
-                                    <option value="pago">Pago</option>
-                                </select>
+                                <label>Quanto já foi pago</label>
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="fornecedor-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não pagou nada)" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                             <div class="demanda-campo">
                                 <label>Previsão de pagamento</label>
@@ -10698,21 +10697,26 @@
                         </div>
 
                         <!-- Freelancer: a diária JÁ é o custo total do evento. -->
-                        <div class="demanda-campo-linha" id="equipe-item-freelancer-wrap">
-                            <div class="demanda-campo">
-                                <label>Valor/diária</label>
-                                <div class="input-moeda-wrap">
-                                    <span class="input-moeda-prefixo">R$</span>
-                                    <input type="text" id="equipe-item-valor" class="form-input" placeholder="0,00 (deixe vazio se não for pago por aqui)" oninput="aplicarMascaraMoeda(this)">
+                        <div id="equipe-item-freelancer-wrap">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Valor/diária</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="equipe-item-valor" class="form-input" placeholder="0,00 (deixe vazio se não for pago por aqui)" oninput="aplicarMascaraMoeda(this)">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Quanto já foi pago</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="equipe-item-valor-pago" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                    </div>
                                 </div>
                             </div>
                             <div class="demanda-campo">
-                                <label>Status do pagamento</label>
-                                <select id="equipe-item-status-pagamento" class="form-input">
-                                    <option value="pendente">Pendente</option>
-                                    <option value="parcial">Parcial</option>
-                                    <option value="pago">Pago</option>
-                                </select>
+                                <label>Previsão de pagamento</label>
+                                <input type="date" id="equipe-item-previsao-pagamento" class="form-input">
                             </div>
                         </div>
 
@@ -10726,21 +10730,26 @@
                                     <option value="nao">Não — teve hora extra</option>
                                 </select>
                             </div>
-                            <div class="demanda-campo-linha hidden" id="equipe-item-hora-extra-wrap">
-                                <div class="demanda-campo">
-                                    <label>Custo da hora extra pra esse evento</label>
-                                    <div class="input-moeda-wrap">
-                                        <span class="input-moeda-prefixo">R$</span>
-                                        <input type="text" id="equipe-item-valor-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                            <div class="hidden" id="equipe-item-hora-extra-wrap">
+                                <div class="demanda-campo-linha">
+                                    <div class="demanda-campo">
+                                        <label>Custo da hora extra pra esse evento</label>
+                                        <div class="input-moeda-wrap">
+                                            <span class="input-moeda-prefixo">R$</span>
+                                            <input type="text" id="equipe-item-valor-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                        </div>
+                                    </div>
+                                    <div class="demanda-campo">
+                                        <label>Quanto já foi pago</label>
+                                        <div class="input-moeda-wrap">
+                                            <span class="input-moeda-prefixo">R$</span>
+                                            <input type="text" id="equipe-item-valor-pago-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="demanda-campo">
-                                    <label>Status do pagamento</label>
-                                    <select id="equipe-item-status-pagamento-registrado" class="form-input">
-                                        <option value="pendente">Pendente</option>
-                                        <option value="parcial">Parcial</option>
-                                        <option value="pago">Pago</option>
-                                    </select>
+                                    <label>Previsão de pagamento</label>
+                                    <input type="date" id="equipe-item-previsao-pagamento-registrado" class="form-input">
                                 </div>
                             </div>
                         </div>
@@ -10900,12 +10909,11 @@
                         </div>
                         <div class="demanda-campo-linha">
                             <div class="demanda-campo">
-                                <label>Status do pagamento (parte em dinheiro)</label>
-                                <select id="patrocinio-status-pagamento" class="form-input">
-                                    <option value="pendente">Pendente</option>
-                                    <option value="parcial">Parcial</option>
-                                    <option value="pago">Pago</option>
-                                </select>
+                                <label>Quanto já foi recebido (parte em dinheiro)</label>
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="patrocinio-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não recebeu nada)" oninput="aplicarMascaraMoeda(this)">
+                                </div>
                             </div>
                             <div class="demanda-campo">
                                 <label>Previsão de pagamento</label>
@@ -11084,12 +11092,11 @@
                             </div>
                             <div class="demanda-campo-linha">
                                 <div class="demanda-campo">
-                                    <label>Status do pagamento</label>
-                                    <select id="lancamento-status-pagamento" class="form-input">
-                                        <option value="pendente">Pendente</option>
-                                        <option value="parcial">Parcial</option>
-                                        <option value="pago">Pago</option>
-                                    </select>
+                                    <label>Quanto já foi pago</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="lancamento-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não pagou nada)" oninput="aplicarMascaraMoeda(this)">
+                                    </div>
                                 </div>
                                 <div class="demanda-campo">
                                     <label>Previsão de pagamento</label>
@@ -16027,7 +16034,7 @@
             fornecedores: fornR.data.filter(f => f.evento_id === row.id)
                 .map(f => ({
                     id: f.id, nome: f.nome, servico: f.servico, nomeContato: f.nome_contato, contato: f.contato, valor: f.valor,
-                    formaPagamento: f.forma_pagamento, statusPagamento: f.status_pagamento,
+                    formaPagamento: f.forma_pagamento, valorPago: f.valor_pago ? parseFloat(f.valor_pago) : 0,
                     previsaoPagamento: f.previsao_pagamento, prazoEntrega: f.prazo_entrega
                 })),
             equipe: equipeR.data.filter(eq => eq.evento_id === row.id)
@@ -16035,12 +16042,12 @@
                     id: eq.id, nome: eq.nome, funcao: eq.funcao, contato: eq.contato,
                     tipoContratacao: eq.tipo_contratacao || 'freelancer',
                     horarioEntrada: eq.horario_entrada, horarioSaida: eq.horario_saida,
-                    observacao: eq.observacao, valor: eq.valor, statusPagamento: eq.status_pagamento,
+                    observacao: eq.observacao, valor: eq.valor, valorPago: eq.valor_pago ? parseFloat(eq.valor_pago) : 0, previsaoPagamento: eq.previsao_pagamento,
                     dentroHorarioNormal: eq.dentro_horario_normal || 'sim',
-                    valorRegistrado: eq.valor_registrado, statusPagamentoRegistrado: eq.status_pagamento_registrado
+                    valorRegistrado: eq.valor_registrado, valorPagoRegistrado: eq.valor_pago_registrado ? parseFloat(eq.valor_pago_registrado) : 0, previsaoPagamentoRegistrado: eq.previsao_pagamento_registrado
                 })),
             patrocinios: patroR.data.filter(p => p.evento_id === row.id)
-                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', valorPermuta: p.valor_permuta ? parseFloat(p.valor_permuta) : null, entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, statusPagamento: p.status_pagamento, previsaoPagamento: p.previsao_pagamento })),
+                .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', valorPermuta: p.valor_permuta ? parseFloat(p.valor_permuta) : null, entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, valorPago: p.valor_pago ? parseFloat(p.valor_pago) : 0, previsaoPagamento: p.previsao_pagamento })),
             lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
                 .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
             pedidosIngresso: pedidosR.data.filter(p => p.evento_id === row.id)
@@ -16051,7 +16058,7 @@
                         id: l.id, tipo: l.tipo, origem: l.origem, loteId: l.lote_id, descricao: l.descricao, valor: parseFloat(l.valor), data: l.data,
                         tipoItem: l.tipo_item, unidade: l.unidade, quantidade: l.quantidade ? parseFloat(l.quantidade) : null,
                         precoUnitario: l.preco_unitario ? parseFloat(l.preco_unitario) : null, fornecedorId: l.fornecedor_id,
-                        formaPagamento: l.forma_pagamento, statusPagamento: l.status_pagamento, statusEntrega: l.status_entrega,
+                        formaPagamento: l.forma_pagamento, valorPago: l.valor_pago ? parseFloat(l.valor_pago) : 0, statusEntrega: l.status_entrega,
                         previsaoPagamento: l.previsao_pagamento, previsaoEntrega: l.previsao_entrega
                     }))
             }
@@ -16096,18 +16103,19 @@
         if (evento.fornecedores.length) inserts.push(supabaseClient.from('fornecedores').insert(
             evento.fornecedores.map(f => ({
                 id: f.id, evento_id: eventoId, nome: f.nome, servico: f.servico, nome_contato: f.nomeContato || null, contato: f.contato, valor: f.valor,
-                forma_pagamento: f.formaPagamento || null, status_pagamento: f.statusPagamento,
+                forma_pagamento: f.formaPagamento || null, valor_pago: f.valorPago || 0,
                 previsao_pagamento: f.previsaoPagamento || null, prazo_entrega: f.prazoEntrega || null
             }))));
         if (evento.equipe.length) inserts.push(supabaseClient.from('equipe_itens').insert(
             evento.equipe.map(eq => ({
                 id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, contato: eq.contato,
                 tipo_contratacao: eq.tipoContratacao || null, horario_entrada: eq.horarioEntrada || null, horario_saida: eq.horarioSaida || null,
-                observacao: eq.observacao || null, valor: eq.valor || null, status_pagamento: eq.statusPagamento || null,
-                dentro_horario_normal: eq.dentroHorarioNormal || null, valor_registrado: eq.valorRegistrado || null, status_pagamento_registrado: eq.statusPagamentoRegistrado || null
+                observacao: eq.observacao || null, valor: eq.valor || null, valor_pago: eq.valorPago || 0, previsao_pagamento: eq.previsaoPagamento || null,
+                dentro_horario_normal: eq.dentroHorarioNormal || null, valor_registrado: eq.valorRegistrado || null,
+                valor_pago_registrado: eq.valorPagoRegistrado || 0, previsao_pagamento_registrado: eq.previsaoPagamentoRegistrado || null
             }))));
         if (evento.patrocinios.length) inserts.push(supabaseClient.from('patrocinios').insert(
-            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, valor_permuta: p.valorPermuta || null, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, status_pagamento: p.statusPagamento, previsao_pagamento: p.previsaoPagamento || null }))));
+            evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, valor_permuta: p.valorPermuta || null, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, valor_pago: p.valorPago || 0, previsao_pagamento: p.previsaoPagamento || null }))));
         if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
             evento.lotesIngresso.map(l => ({ id: l.id, evento_id: eventoId, nome: l.nome, preco_unitario: l.precoUnitario, quantidade_total: l.quantidadeTotal, inclui: l.inclui }))));
 
@@ -16120,7 +16128,7 @@
                     id: l.id, evento_id: eventoId, tipo: l.tipo, origem: l.origem || null, lote_id: l.loteId || null, descricao: l.descricao, valor: l.valor, data: l.data || null,
                     tipo_item: l.tipoItem || null, unidade: l.unidade || null, quantidade: l.quantidade || null,
                     preco_unitario: l.precoUnitario || null, fornecedor_id: l.fornecedorId || null,
-                    forma_pagamento: l.formaPagamento || null, status_pagamento: l.statusPagamento || null, status_entrega: l.statusEntrega || null,
+                    forma_pagamento: l.formaPagamento || null, valor_pago: l.valorPago || 0, status_entrega: l.statusEntrega || null,
                     previsao_pagamento: l.previsaoPagamento || null, previsao_entrega: l.previsaoEntrega || null
                 }))));
         }
@@ -17081,6 +17089,27 @@
         input.value = partes.join(',');
     }
 
+    // Substitui o antigo status "parcial" (que não dizia quanto faltava)
+    // por um cálculo em cima do valor já pago de verdade, em reais. Usado
+    // em todo lugar que tem custo/despesa/investimento ou dinheiro a
+    // receber: lançamento, fornecedor, patrocínio, equipe.
+    // Alguns módulos guardam valor como número (lançamento, patrocínio) e
+    // outros como texto formatado (fornecedor, equipe) — normaliza os dois
+    // casos antes de comparar.
+    function normalizarValorMonetario(v) {
+        if (typeof v === 'number') return v;
+        if (!v) return 0;
+        return parseFloat(String(v).replace(/\./g, '').replace(',', '.')) || 0;
+    }
+
+    function statusPagamentoInfo(valorTotal, valorPago) {
+        const total = normalizarValorMonetario(valorTotal);
+        const pago = normalizarValorMonetario(valorPago);
+        if (pago <= 0) return { texto: 'Pendente', cor: { bg: '#FEE2E2', fg: '#991B1B' } };
+        if (pago >= total) return { texto: 'Pago', cor: { bg: '#DCFCE7', fg: '#166534' } };
+        return { texto: `Pago ${formatarMoeda(pago)} de ${formatarMoeda(total)} — falta ${formatarMoeda(total - pago)}`, cor: { bg: '#FEF3C7', fg: '#B45309' } };
+    }
+
     function eventoCalcularLucro(evento) {
         const lancamentos = (evento.financeiro && evento.financeiro.lancamentos) || [];
         const receitas = lancamentos.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
@@ -17400,22 +17429,22 @@
             return;
         }
 
-        const corStatus = { pendente: '#92400E', parcial: '#1D4ED8', pago: '#166534' };
-        const labelStatus = { pendente: 'Pendente', parcial: 'Parcial', pago: 'Pago' };
-
-        lista.innerHTML = itens.map(f => `
+        lista.innerHTML = itens.map(f => {
+            const statusPg = statusPagamentoInfo(f.valor, f.valorPago);
+            return `
             <div class="usuario-item">
                 <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${f.nome.charAt(0).toUpperCase()}</div>
                 <div class="usuario-item-info">
                     <div class="usuario-item-nome">${f.nome}</div>
-                    <div class="usuario-item-detalhe">${f.servico || '—'}${f.contato ? ' · ' + f.contato : ''}${f.valor ? ' · ' + f.valor : ''}</div>
+                    <div class="usuario-item-detalhe">${f.servico || '—'}${f.contato ? ' · ' + f.contato : ''}${f.valor ? ' · ' + f.valor : ''}${f.previsaoPagamento ? ' · Prazo: ' + new Date(f.previsaoPagamento + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
                 </div>
-                <span class="cliente-item-idade-badge" style="background:${corStatus[f.statusPagamento]}20; color:${corStatus[f.statusPagamento]};">${labelStatus[f.statusPagamento]}</span>
+                <span class="cliente-item-idade-badge" style="background:${statusPg.cor.bg}; color:${statusPg.cor.fg};">${statusPg.texto}</span>
                 <div class="usuario-item-acoes">
                     <button class="btn-icon-acao" onclick="abrirModalFornecedor('${f.id}')" title="Editar">${ICONE_EDITAR}</button>
                     <button class="btn-icon-acao excluir" onclick="excluirFornecedor('${f.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     function abrirModalFornecedor(id) {
@@ -17430,7 +17459,7 @@
         document.getElementById('fornecedor-contato').value = f ? (f.contato || '') : '';
         document.getElementById('fornecedor-valor').value = f ? (f.valor || '') : '';
         document.getElementById('fornecedor-forma-pagamento').value = f ? (f.formaPagamento || 'pix') : 'pix';
-        document.getElementById('fornecedor-status-pagamento').value = f ? f.statusPagamento : 'pendente';
+        document.getElementById('fornecedor-valor-pago').value = (f && f.valorPago) ? String(f.valorPago).replace('.', ',') : '';
         document.getElementById('fornecedor-previsao-pagamento').value = f ? (f.previsaoPagamento || '') : '';
         document.getElementById('fornecedor-prazo-entrega').value = f ? (f.prazoEntrega || '') : '';
 
@@ -17461,7 +17490,7 @@
             contato: document.getElementById('fornecedor-contato').value.trim(),
             valor: document.getElementById('fornecedor-valor').value.trim(),
             formaPagamento: document.getElementById('fornecedor-forma-pagamento').value,
-            statusPagamento: document.getElementById('fornecedor-status-pagamento').value,
+            valorPago: parseFloat(document.getElementById('fornecedor-valor-pago').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
             previsaoPagamento: document.getElementById('fornecedor-previsao-pagamento').value || null,
             prazoEntrega: document.getElementById('fornecedor-prazo-entrega').value || null
         };
@@ -17509,7 +17538,7 @@
             tipoItem: 'servico',
             fornecedorId: fornecedor.id,
             formaPagamento: fornecedor.formaPagamento || null,
-            statusPagamento: fornecedor.statusPagamento || 'pendente',
+            valorPago: fornecedor.valorPago || 0,
             previsaoPagamento: fornecedor.previsaoPagamento || null,
             previsaoEntrega: fornecedor.prazoEntrega || null
         };
@@ -17535,6 +17564,7 @@
             origem: 'patrocinio',
             descricao: `Patrocínio — ${patrocinio.nomeEmpresa}`,
             valor: patrocinio.valorDinheiro,
+            valorPago: patrocinio.valorPago || 0,
             data: existente ? existente.data : new Date().toISOString().slice(0, 10)
         };
         if (existente) Object.assign(existente, dados);
@@ -17572,13 +17602,24 @@
             const horarioTexto = p.horarioEntrada
                 ? p.horarioEntrada + (p.horarioSaida ? ' às ' + p.horarioSaida : ' (sem saída definida)')
                 : 'Horário não definido';
+            const custo = equipeCustoEfetivo(p);
+            const previsao = p.tipoContratacao === 'registrado' ? p.previsaoPagamentoRegistrado : p.previsaoPagamento;
+            const detalhes = [horarioTexto];
+            if (p.contato) detalhes.push(p.contato);
+            if (custo.valor) detalhes.push('Custo: ' + formatarMoeda(normalizarValorMonetario(custo.valor)));
+            if (previsao && custo.valor) detalhes.push('Prazo: ' + new Date(previsao + 'T00:00:00').toLocaleDateString('pt-BR'));
+            if (p.observacao) detalhes.push(p.observacao);
+
+            const statusPg = custo.valor ? statusPagamentoInfo(custo.valor, custo.valorPago) : null;
+
             return `
             <div class="usuario-item">
                 <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${p.nome.charAt(0).toUpperCase()}</div>
                 <div class="usuario-item-info">
                     <div class="usuario-item-nome">${p.nome} ${p.funcao ? `<span class="usuario-badge-convite">${p.funcao}</span>` : ''} <span class="usuario-badge-convite">${TIPO_LABEL[p.tipoContratacao] || 'Freelancer'}</span></div>
-                    <div class="usuario-item-detalhe">${horarioTexto}${p.contato ? ' · ' + p.contato : ''}${p.observacao ? ' · ' + p.observacao : ''}</div>
+                    <div class="usuario-item-detalhe">${detalhes.join(' · ')}</div>
                 </div>
+                ${statusPg ? `<span class="cliente-item-idade-badge" style="background:${statusPg.cor.bg}; color:${statusPg.cor.fg};">${statusPg.texto}</span>` : ''}
                 <div class="usuario-item-acoes">
                     <button class="btn-icon-acao" onclick="abrirModalEquipeItem('${p.id}')" title="Editar">${ICONE_EDITAR}</button>
                     <button class="btn-icon-acao excluir" onclick="excluirEquipeItem('${p.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
@@ -17611,10 +17652,12 @@
         document.getElementById('equipe-item-contato').value = p ? (p.contato || '') : '';
         document.getElementById('equipe-item-observacao').value = p ? (p.observacao || '') : '';
         document.getElementById('equipe-item-valor').value = p ? (p.valor || '') : '';
-        document.getElementById('equipe-item-status-pagamento').value = p ? (p.statusPagamento || 'pendente') : 'pendente';
+        document.getElementById('equipe-item-valor-pago').value = (p && p.valorPago) ? String(p.valorPago).replace('.', ',') : '';
+        document.getElementById('equipe-item-previsao-pagamento').value = p ? (p.previsaoPagamento || '') : '';
         document.getElementById('equipe-item-dentro-horario-normal').value = p ? (p.dentroHorarioNormal || 'sim') : 'sim';
         document.getElementById('equipe-item-valor-registrado').value = p ? (p.valorRegistrado || '') : '';
-        document.getElementById('equipe-item-status-pagamento-registrado').value = p ? (p.statusPagamentoRegistrado || 'pendente') : 'pendente';
+        document.getElementById('equipe-item-valor-pago-registrado').value = (p && p.valorPagoRegistrado) ? String(p.valorPagoRegistrado).replace('.', ',') : '';
+        document.getElementById('equipe-item-previsao-pagamento-registrado').value = p ? (p.previsaoPagamentoRegistrado || '') : '';
         equipeItemAtualizarCampos();
 
         const modal = document.getElementById('modal-equipe-item');
@@ -17634,18 +17677,18 @@
     function equipeCustoEfetivo(pessoa) {
         if (pessoa.tipoContratacao === 'registrado') {
             if (pessoa.dentroHorarioNormal === 'nao') {
-                return { valor: pessoa.valorRegistrado, status: pessoa.statusPagamentoRegistrado };
+                return { valor: pessoa.valorRegistrado, valorPago: pessoa.valorPagoRegistrado };
             }
-            return { valor: '', status: null };
+            return { valor: '', valorPago: 0 };
         }
-        return { valor: pessoa.valor, status: pessoa.statusPagamento };
+        return { valor: pessoa.valor, valorPago: pessoa.valorPago };
     }
 
     function sincronizarLancamentoDeEquipe(evento, pessoa) {
         evento.financeiro = evento.financeiro || { lancamentos: [] };
         const idLancamento = 'lanc_equipe_' + pessoa.id;
         const custo = equipeCustoEfetivo(pessoa);
-        const valorNum = parseFloat(String(custo.valor || '').replace(/\./g, '').replace(',', '.')) || 0;
+        const valorNum = normalizarValorMonetario(custo.valor);
         const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
 
         if (!valorNum) {
@@ -17654,12 +17697,14 @@
         }
 
         const rotuloTipo = pessoa.tipoContratacao === 'registrado' ? ' — hora extra' : '';
+        const previsao = pessoa.tipoContratacao === 'registrado' ? pessoa.previsaoPagamentoRegistrado : pessoa.previsaoPagamento;
         const dados = {
             tipo: 'custo_fixo',
             descricao: `Equipe — ${pessoa.nome}${pessoa.funcao ? ' (' + pessoa.funcao + ')' : ''}${rotuloTipo}`,
             valor: valorNum,
             data: existente ? existente.data : new Date().toISOString().slice(0, 10),
-            statusPagamento: custo.status || 'pendente'
+            valorPago: normalizarValorMonetario(custo.valorPago),
+            previsaoPagamento: previsao || null
         };
         if (existente) Object.assign(existente, dados);
         else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
@@ -17683,10 +17728,12 @@
             contato: document.getElementById('equipe-item-contato').value.trim(),
             observacao: document.getElementById('equipe-item-observacao').value.trim(),
             valor: document.getElementById('equipe-item-valor').value.trim(),
-            statusPagamento: document.getElementById('equipe-item-status-pagamento').value,
+            valorPago: parseFloat(document.getElementById('equipe-item-valor-pago').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
+            previsaoPagamento: document.getElementById('equipe-item-previsao-pagamento').value || null,
             dentroHorarioNormal: document.getElementById('equipe-item-dentro-horario-normal').value,
             valorRegistrado: document.getElementById('equipe-item-valor-registrado').value.trim(),
-            statusPagamentoRegistrado: document.getElementById('equipe-item-status-pagamento-registrado').value
+            valorPagoRegistrado: parseFloat(document.getElementById('equipe-item-valor-pago-registrado').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
+            previsaoPagamentoRegistrado: document.getElementById('equipe-item-previsao-pagamento-registrado').value || null
         };
 
         let pessoaSalva;
@@ -17781,9 +17828,6 @@
             return;
         }
 
-        const corStatus = { pendente: '#92400E', parcial: '#1D4ED8', pago: '#166534' };
-        const labelStatus = { pendente: 'Pendente', parcial: 'Parcial', pago: 'Pago' };
-
         lista.innerHTML = itens.map(p => {
             const partes = [];
             if (p.valorDinheiro) partes.push(formatarMoeda(p.valorDinheiro) + ' em dinheiro');
@@ -17791,6 +17835,9 @@
             if (partes.length === 0) partes.push('Sem valor definido');
             const resumoEntregaveis = entregaveisResumoTexto(p.entregaveis);
             if (resumoEntregaveis) partes.push(resumoEntregaveis);
+            if (p.previsaoPagamento && p.valorDinheiro) partes.push('Prazo: ' + new Date(p.previsaoPagamento + 'T00:00:00').toLocaleDateString('pt-BR'));
+
+            const statusPg = p.valorDinheiro ? statusPagamentoInfo(p.valorDinheiro, p.valorPago) : null;
 
             return `
             <div class="usuario-item">
@@ -17799,7 +17846,7 @@
                     <div class="usuario-item-nome">${p.nomeEmpresa} <span class="usuario-badge-convite">${p.tipo} · ${p.nivel}</span></div>
                     <div class="usuario-item-detalhe">${partes.join(' · ')}</div>
                 </div>
-                <span class="cliente-item-idade-badge" style="background:${corStatus[p.statusPagamento]}20; color:${corStatus[p.statusPagamento]};">${labelStatus[p.statusPagamento]}</span>
+                ${statusPg ? `<span class="cliente-item-idade-badge" style="background:${statusPg.cor.bg}; color:${statusPg.cor.fg};">${statusPg.texto}</span>` : ''}
                 <div class="usuario-item-acoes">
                     <button class="btn-icon-acao" onclick="abrirModalPatrocinio('${p.id}')" title="Editar">${ICONE_EDITAR}</button>
                     <button class="btn-icon-acao excluir" onclick="excluirPatrocinio('${p.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
@@ -17827,7 +17874,7 @@
         document.getElementById('patrocinio-permuta').value = p ? (p.descricaoPermuta || '') : '';
         document.getElementById('patrocinio-valor-permuta').value = p && p.valorPermuta ? String(p.valorPermuta).replace('.', ',') : '';
         document.getElementById('patrocinio-forma-pagamento').value = p ? (p.formaPagamento || 'pix') : 'pix';
-        document.getElementById('patrocinio-status-pagamento').value = p ? p.statusPagamento : 'pendente';
+        document.getElementById('patrocinio-valor-pago').value = (p && p.valorPago) ? String(p.valorPago).replace('.', ',') : '';
         document.getElementById('patrocinio-previsao-pagamento').value = p ? (p.previsaoPagamento || '') : '';
 
         document.querySelectorAll('.entregavel-check').forEach(chk => { chk.checked = false; });
@@ -17899,7 +17946,7 @@
             valorPermuta: parseFloat(document.getElementById('patrocinio-valor-permuta').value.trim().replace(/\./g, '').replace(',', '.')) || null,
             entregaveis,
             formaPagamento: document.getElementById('patrocinio-forma-pagamento').value,
-            statusPagamento: document.getElementById('patrocinio-status-pagamento').value,
+            valorPago: parseFloat(document.getElementById('patrocinio-valor-pago').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
             previsaoPagamento: document.getElementById('patrocinio-previsao-pagamento').value || null
         };
 
@@ -18438,7 +18485,7 @@
         document.getElementById('lancamento-quantidade').value = (l && l.quantidade) || 1;
         document.getElementById('lancamento-preco-unitario').value = (l && l.precoUnitario) ? String(l.precoUnitario).replace('.', ',') : '';
         document.getElementById('lancamento-forma-pagamento').value = (l && l.formaPagamento) || 'pix';
-        document.getElementById('lancamento-status-pagamento').value = (l && l.statusPagamento) || 'pendente';
+        document.getElementById('lancamento-valor-pago').value = (l && l.valorPago) ? String(l.valorPago).replace('.', ',') : '';
         document.getElementById('lancamento-status-entrega').value = (l && l.statusEntrega) || 'pendente';
         document.getElementById('lancamento-previsao-pagamento').value = (l && l.previsaoPagamento) || '';
         document.getElementById('lancamento-previsao-entrega').value = (l && l.previsaoEntrega) || '';
@@ -18499,7 +18546,7 @@
             dadosLancamento.precoUnitario = precoUnitarioTexto ? parseFloat(precoUnitarioTexto.replace(/\./g, '').replace(',', '.')) : null;
             dadosLancamento.fornecedorId = document.getElementById('lancamento-fornecedor').value || null;
             dadosLancamento.formaPagamento = document.getElementById('lancamento-forma-pagamento').value;
-            dadosLancamento.statusPagamento = document.getElementById('lancamento-status-pagamento').value;
+            dadosLancamento.valorPago = parseFloat(document.getElementById('lancamento-valor-pago').value.trim().replace(/\./g, '').replace(',', '.')) || 0;
             dadosLancamento.statusEntrega = document.getElementById('lancamento-status-entrega').value;
             dadosLancamento.previsaoPagamento = document.getElementById('lancamento-previsao-pagamento').value || null;
             dadosLancamento.previsaoEntrega = document.getElementById('lancamento-previsao-entrega').value || null;
@@ -18517,6 +18564,7 @@
                 delete l.fornecedorId;
                 delete l.formaPagamento;
                 delete l.statusPagamento;
+                delete l.valorPago;
                 delete l.statusEntrega;
                 delete l.previsaoPagamento;
                 delete l.previsaoEntrega;
@@ -18752,7 +18800,6 @@
                 return;
             }
 
-            const STATUS_PAGAMENTO_LABEL = { pendente: 'Pagamento pendente', parcial: 'Pagamento parcial', pago: 'Pago' };
             const STATUS_ENTREGA_LABEL = { pendente: 'Pendente', a_caminho: 'A caminho', concluido: 'Recebido/Concluído' };
             const corStatus = (v, boas) => boas.includes(v) ? { bg: '#DCFCE7', fg: '#166534' } : (v === 'pendente' ? { bg: '#FEE2E2', fg: '#991B1B' } : { bg: '#FEF3C7', fg: '#B45309' });
 
@@ -18769,9 +18816,10 @@
                 if (!ehReceita) {
                     const fornecedor = l.fornecedorId ? (evento.fornecedores || []).find(f => f.id === l.fornecedorId) : null;
                     if (fornecedor) tagsCusto += `<span class="fin-linha-tag">${fornecedor.nome}</span>`;
-                    if (l.statusPagamento) {
-                        const c = corStatus(l.statusPagamento, ['pago']);
-                        tagsCusto += `<span class="fin-linha-tag" style="background:${c.bg}; color:${c.fg};">${STATUS_PAGAMENTO_LABEL[l.statusPagamento]}</span>`;
+                    const statusPg = statusPagamentoInfo(l.valor, l.valorPago);
+                    tagsCusto += `<span class="fin-linha-tag" style="background:${statusPg.cor.bg}; color:${statusPg.cor.fg};">${statusPg.texto}</span>`;
+                    if (l.previsaoPagamento && (l.valorPago || 0) < l.valor) {
+                        tagsCusto += `<span class="fin-linha-tag">Prazo: ${new Date(l.previsaoPagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>`;
                     }
                     if (l.statusEntrega) {
                         const c = corStatus(l.statusEntrega, ['concluido']);
