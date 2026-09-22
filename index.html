@@ -10252,6 +10252,18 @@
                             </div>
                         </div>
 
+                        <div class="evento-gestao-nav-grupo" id="evento-gestao-nav-orcamentos-grupo">
+                            <button type="button" class="evento-gestao-nav-item evento-gestao-nav-grupo-titulo" id="evento-gestao-tab-orcamentos" onclick="eventoGestaoToggleGrupo('orcamentos')" title="Orçamentos">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                                <span>Orçamentos</span>
+                                <svg class="evento-gestao-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </button>
+                            <div class="evento-gestao-nav-subitens" id="evento-gestao-nav-orcamentos-subitens">
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="orcamentos-cotacoes" onclick="eventoGestaoTrocarAba('orcamentos-cotacoes', this)">Cotações</button>
+                                <button type="button" class="evento-gestao-nav-subitem" data-view="orcamentos-pedidos" onclick="eventoGestaoTrocarAba('orcamentos-pedidos', this)">Pedidos de compra</button>
+                            </div>
+                        </div>
+
                         <div class="evento-gestao-nav-grupo" id="evento-gestao-nav-financeiro-grupo">
                             <button type="button" class="evento-gestao-nav-item evento-gestao-nav-grupo-titulo" id="evento-gestao-tab-financeiro" onclick="eventoGestaoToggleFinanceiroGrupo()" title="Financeiro">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
@@ -10314,6 +10326,26 @@
                                 Novo patrocínio/parceria
                             </button>
                             <div id="evento-gestao-patrocinios-lista"></div>
+                        </div>
+
+                        <!-- ORÇAMENTOS: COTAÇÕES -->
+                        <div id="evento-gestao-view-orcamentos-cotacoes" class="marketing-view hidden">
+                            <p class="aparencia-bloco-sub" style="margin-bottom:16px;">Cotação ainda não é custo — só vira despesa de verdade quando você fecha um pedido de compra a partir dela.</p>
+                            <button type="button" class="add-button" onclick="abrirModalCotacao()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Nova cotação
+                            </button>
+                            <div id="evento-gestao-cotacoes-lista"></div>
+                        </div>
+
+                        <!-- ORÇAMENTOS: PEDIDOS DE COMPRA -->
+                        <div id="evento-gestao-view-orcamentos-pedidos" class="marketing-view hidden">
+                            <p class="aparencia-bloco-sub" style="margin-bottom:16px;">Pedido de compra é o que já virou custo de verdade — pode nascer de uma cotação fechada ou ser lançado direto (ex: compra pela internet).</p>
+                            <button type="button" class="add-button" onclick="abrirModalPedidoCompra()" style="margin-bottom:16px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                Novo pedido de compra
+                            </button>
+                            <div id="evento-gestao-pedidos-compra-lista"></div>
                         </div>
 
                         <!-- FINANCEIRO: RESUMO -->
@@ -10995,6 +11027,175 @@
                     <div class="modal-evento-footer">
                         <button class="btn-cancelar-edicao" onclick="fecharModalPatrocinio()">Cancelar</button>
                         <button class="btn-save" onclick="salvarPatrocinio()">Salvar</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: COTAÇÃO / ORÇAMENTO -->
+            <div id="modal-cotacao" class="modal-overlay hidden">
+                <div class="modal-box modal-equipamento-casa-box">
+                    <div class="modal-demanda-header">
+                        <h3 id="cotacao-titulo-modal">Nova cotação</h3>
+                        <button class="modal-close-btn" onclick="fecharModalCotacao()">&times;</button>
+                    </div>
+                    <div class="demanda-modal-corpo">
+                        <input type="hidden" id="cotacao-id">
+                        <div class="demanda-campo">
+                            <label>O que está sendo cotado <span class="campo-obrigatorio">*</span></label>
+                            <input type="text" id="cotacao-descricao" class="input-obrigatorio" placeholder="Ex: Som e iluminação, Chope alemão...">
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Unidade</label>
+                                <select id="cotacao-unidade" class="form-input">
+                                    <option value="unidade">Unidade</option>
+                                    <option value="peca">Peça</option>
+                                    <option value="conjunto">Conjunto</option>
+                                    <option value="kg">Kg</option>
+                                    <option value="litro">Litro</option>
+                                    <option value="metro">Metro</option>
+                                    <option value="caixa">Caixa</option>
+                                    <option value="pacote">Pacote</option>
+                                    <option value="servico">Serviço fechado</option>
+                                </select>
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Quantidade</label>
+                                <input type="number" id="cotacao-quantidade" class="form-input" min="0" step="0.01" value="1">
+                            </div>
+                        </div>
+                        <div class="demanda-campo">
+                            <label>Prazo pra decidir (opcional)</label>
+                            <input type="date" id="cotacao-prazo-decisao" class="form-input">
+                        </div>
+
+                        <div class="demanda-subgrupo">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size:12px; font-weight:700; text-transform:uppercase; color:var(--warm-gray);">Fornecedores cotados</label>
+                                <button type="button" class="btn-icon-acao" onclick="cotacaoAdicionarFornecedor()" title="Adicionar fornecedor" style="background:var(--brown); color:#fff;">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </button>
+                            </div>
+                            <div id="cotacao-fornecedores-lista"></div>
+                        </div>
+
+                        <div class="demanda-campo" id="cotacao-kanban-wrap">
+                            <label class="permissao-item"><input type="checkbox" id="cotacao-criar-tarefa-kanban" checked> Criar tarefa no Kanban pra acompanhar essa cotação</label>
+                        </div>
+                        <div class="demanda-campo hidden" id="cotacao-kanban-vinculada-wrap">
+                            <label>Tarefa vinculada no Kanban</label>
+                            <div id="cotacao-kanban-vinculada-info" style="font-size:13px; color:var(--warm-gray);"></div>
+                        </div>
+                    </div>
+                    <div class="modal-evento-footer">
+                        <button class="btn-cancelar-edicao" onclick="fecharModalCotacao()">Cancelar</button>
+                        <button class="btn-save" onclick="salvarCotacao()">Salvar cotação</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: PEDIDO DE COMPRA -->
+            <div id="modal-pedido-compra" class="modal-overlay hidden">
+                <div class="modal-box modal-equipamento-casa-box">
+                    <div class="modal-demanda-header">
+                        <h3 id="pedido-compra-titulo-modal">Novo pedido de compra</h3>
+                        <button class="modal-close-btn" onclick="fecharModalPedidoCompra()">&times;</button>
+                    </div>
+                    <div class="demanda-modal-corpo">
+                        <input type="hidden" id="pedido-compra-id">
+                        <input type="hidden" id="pedido-compra-cotacao-origem">
+                        <div class="demanda-campo">
+                            <label>Descrição <span class="campo-obrigatorio">*</span></label>
+                            <input type="text" id="pedido-compra-descricao" class="input-obrigatorio" placeholder="Ex: Som e iluminação, Chope alemão...">
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Unidade</label>
+                                <select id="pedido-compra-unidade" class="form-input">
+                                    <option value="unidade">Unidade</option>
+                                    <option value="peca">Peça</option>
+                                    <option value="conjunto">Conjunto</option>
+                                    <option value="kg">Kg</option>
+                                    <option value="litro">Litro</option>
+                                    <option value="metro">Metro</option>
+                                    <option value="caixa">Caixa</option>
+                                    <option value="pacote">Pacote</option>
+                                    <option value="servico">Serviço fechado</option>
+                                </select>
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Quantidade</label>
+                                <input type="number" id="pedido-compra-quantidade" class="form-input" min="0" step="0.01" value="1" oninput="pedidoCompraAtualizarValorTotal()">
+                            </div>
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Preço unitário</label>
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="pedido-compra-preco-unitario" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); pedidoCompraAtualizarValorTotal()">
+                                </div>
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Valor total</label>
+                                <div class="input-moeda-wrap">
+                                    <span class="input-moeda-prefixo">R$</span>
+                                    <input type="text" id="pedido-compra-valor-total" class="form-input" placeholder="Calculado automaticamente" readonly style="background:var(--beige);">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Fornecedor</label>
+                                <input type="text" id="pedido-compra-fornecedor-nome" class="form-input" placeholder="Nome do fornecedor (ou 'Compra direta pela internet')">
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Forma de pagamento</label>
+                                <select id="pedido-compra-forma-pagamento" class="form-input">
+                                    <option value="pix">PIX</option>
+                                    <option value="boleto">Boleto</option>
+                                    <option value="cartao_credito">Cartão de crédito</option>
+                                    <option value="cartao_debito">Cartão de débito</option>
+                                    <option value="dinheiro">Dinheiro</option>
+                                    <option value="transferencia">Transferência</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="demanda-subgrupo">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Quanto já foi pago</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="pedido-compra-valor-pago" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); pedidoCompraAtualizarBadge()">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Previsão de pagamento</label>
+                                    <input type="date" id="pedido-compra-previsao-pagamento" class="form-input">
+                                </div>
+                            </div>
+                            <div id="pedido-compra-status-badge" class="status-pagamento-badge-modal"></div>
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Status da entrega</label>
+                                    <select id="pedido-compra-status-entrega" class="form-input">
+                                        <option value="pendente">Pendente</option>
+                                        <option value="a_caminho">A caminho</option>
+                                        <option value="concluido">Recebido</option>
+                                    </select>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Prazo de entrega</label>
+                                    <input type="date" id="pedido-compra-prazo-entrega" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-evento-footer">
+                        <button class="btn-cancelar-edicao" onclick="fecharModalPedidoCompra()">Cancelar</button>
+                        <button class="btn-save" onclick="salvarPedidoCompra()">Salvar pedido de compra</button>
                     </div>
                 </div>
             </div>
@@ -12308,6 +12509,7 @@
                                     <option value="foto">Fotografia</option>
                                     <option value="video">Vídeo</option>
                                     <option value="trafego_pago">Tráfego pago</option>
+                                    <option value="cotacao">Cotação/Orçamento</option>
                                     <option value="outro">Outro</option>
                                 </select>
                                 <input type="text" id="demanda-form-tipo-customizado" class="input-tipo-customizado hidden" placeholder="Descreva a categoria...">
@@ -16032,7 +16234,7 @@
     }
 
     async function carregarEventosGerenciadosDoSupabase() {
-        const [eventosR, progR, checkR, fornR, equipeR, patroR, loteR, lancR, pedidosR] = await Promise.all([
+        const [eventosR, progR, checkR, fornR, equipeR, patroR, loteR, lancR, pedidosR, cotacaoR, pedidosCompraR] = await Promise.all([
             supabaseClient.from('eventos').select('*'),
             supabaseClient.from('programacao_itens').select('*'),
             supabaseClient.from('checklist_itens').select('*'),
@@ -16041,10 +16243,12 @@
             supabaseClient.from('patrocinios').select('*'),
             supabaseClient.from('lotes_ingresso').select('*'),
             supabaseClient.from('lancamentos_financeiros').select('*'),
-            supabaseClient.from('pedidos_ingresso').select('*')
+            supabaseClient.from('pedidos_ingresso').select('*'),
+            supabaseClient.from('cotacoes').select('*'),
+            supabaseClient.from('pedidos_compra').select('*')
         ]);
 
-        if (eventosR.error || progR.error || checkR.error || fornR.error || equipeR.error || patroR.error || loteR.error || lancR.error || pedidosR.error) {
+        if (eventosR.error || progR.error || checkR.error || fornR.error || equipeR.error || patroR.error || loteR.error || lancR.error || pedidosR.error || cotacaoR.error || pedidosCompraR.error) {
             mostrarErroConexaoSupabase();
             return false;
         }
@@ -16082,6 +16286,21 @@
                 .map(l => ({ id: l.id, nome: l.nome, precoUnitario: parseFloat(l.preco_unitario), quantidadeTotal: l.quantidade_total, inclui: l.inclui })),
             pedidosIngresso: pedidosR.data.filter(p => p.evento_id === row.id)
                 .map(p => ({ id: p.id, loteId: p.lote_id, nomeComprador: p.nome_comprador, whatsappComprador: p.whatsapp_comprador, emailComprador: p.email_comprador || '', quantidade: p.quantidade, valorTotal: parseFloat(p.valor_total), status: p.status, clienteId: p.cliente_id || null, criadoEm: p.criado_em })),
+            cotacoes: cotacaoR.data.filter(c => c.evento_id === row.id)
+                .map(c => ({
+                    id: c.id, descricao: c.descricao, unidade: c.unidade, quantidade: c.quantidade,
+                    status: c.status, fornecedoresCotados: c.fornecedores_cotados || [], fornecedorEscolhidoIndex: c.fornecedor_escolhido_index,
+                    demandaId: c.demanda_id, pedidoCompraId: c.pedido_compra_id, prazoDecisao: c.prazo_decisao
+                })),
+            pedidosCompra: pedidosCompraR.data.filter(pc => pc.evento_id === row.id)
+                .map(pc => ({
+                    id: pc.id, descricao: pc.descricao, unidade: pc.unidade, quantidade: pc.quantidade,
+                    precoUnitario: pc.preco_unitario ? parseFloat(pc.preco_unitario) : null,
+                    fornecedorNome: pc.fornecedor_nome, fornecedorId: pc.fornecedor_id, formaPagamento: pc.forma_pagamento,
+                    prazoEntrega: pc.prazo_entrega, valorPago: pc.valor_pago ? parseFloat(pc.valor_pago) : 0,
+                    previsaoPagamento: pc.previsao_pagamento, statusEntrega: pc.status_entrega,
+                    cotacaoOrigemId: pc.cotacao_origem_id, data: pc.data
+                })),
             financeiro: {
                 lancamentos: lancR.data.filter(l => l.evento_id === row.id)
                     .map(l => ({
@@ -16110,11 +16329,12 @@
             gestao_completa_ativa: true, quadro_kanban_id: evento.quadroKanbanId, atualizado_em: new Date().toISOString()
         });
 
-        // Pedidos e lançamentos referenciam lote_id, então saem primeiro;
-        // lotes saem por último, na mesma leva dos outros filhos.
+        // Pedidos e lançamentos referenciam lote_id/cotacao_id, então saem primeiro;
+        // lotes e cotações saem por último, na mesma leva dos outros filhos.
         await Promise.all([
             supabaseClient.from('pedidos_ingresso').delete().eq('evento_id', eventoId),
-            supabaseClient.from('lancamentos_financeiros').delete().eq('evento_id', eventoId)
+            supabaseClient.from('lancamentos_financeiros').delete().eq('evento_id', eventoId),
+            supabaseClient.from('pedidos_compra').delete().eq('evento_id', eventoId)
         ]);
         await Promise.all([
             supabaseClient.from('programacao_itens').delete().eq('evento_id', eventoId),
@@ -16122,7 +16342,8 @@
             supabaseClient.from('fornecedores').delete().eq('evento_id', eventoId),
             supabaseClient.from('equipe_itens').delete().eq('evento_id', eventoId),
             supabaseClient.from('patrocinios').delete().eq('evento_id', eventoId),
-            supabaseClient.from('lotes_ingresso').delete().eq('evento_id', eventoId)
+            supabaseClient.from('lotes_ingresso').delete().eq('evento_id', eventoId),
+            supabaseClient.from('cotacoes').delete().eq('evento_id', eventoId)
         ]);
 
         const inserts = [];
@@ -16148,6 +16369,12 @@
             evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, valor_permuta: p.valorPermuta || null, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, valor_pago: p.valorPago || 0, previsao_pagamento: p.previsaoPagamento || null }))));
         if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
             evento.lotesIngresso.map(l => ({ id: l.id, evento_id: eventoId, nome: l.nome, preco_unitario: l.precoUnitario, quantidade_total: l.quantidadeTotal, inclui: l.inclui }))));
+        if ((evento.cotacoes || []).length) inserts.push(supabaseClient.from('cotacoes').insert(
+            evento.cotacoes.map(c => ({
+                id: c.id, evento_id: eventoId, descricao: c.descricao, unidade: c.unidade, quantidade: c.quantidade,
+                status: c.status, fornecedores_cotados: c.fornecedoresCotados || [], fornecedor_escolhido_index: c.fornecedorEscolhidoIndex,
+                demanda_id: c.demandaId || null, pedido_compra_id: c.pedidoCompraId || null, prazo_decisao: c.prazoDecisao || null
+            }))));
 
         await Promise.all(inserts);
 
@@ -16165,6 +16392,16 @@
         if ((evento.pedidosIngresso || []).length) {
             insertsFinal.push(supabaseClient.from('pedidos_ingresso').insert(
                 evento.pedidosIngresso.map(p => ({ id: p.id, evento_id: eventoId, lote_id: p.loteId || null, nome_comprador: p.nomeComprador, whatsapp_comprador: p.whatsappComprador, email_comprador: p.emailComprador || null, quantidade: p.quantidade, valor_total: p.valorTotal, status: p.status, cliente_id: p.clienteId || null, criado_em: p.criadoEm || new Date().toISOString() }))));
+        }
+        if ((evento.pedidosCompra || []).length) {
+            insertsFinal.push(supabaseClient.from('pedidos_compra').insert(
+                evento.pedidosCompra.map(pc => ({
+                    id: pc.id, evento_id: eventoId, descricao: pc.descricao, unidade: pc.unidade, quantidade: pc.quantidade,
+                    preco_unitario: pc.precoUnitario || null, fornecedor_nome: pc.fornecedorNome || null, fornecedor_id: pc.fornecedorId || null,
+                    forma_pagamento: pc.formaPagamento || null, prazo_entrega: pc.prazoEntrega || null, valor_pago: pc.valorPago || 0,
+                    previsao_pagamento: pc.previsaoPagamento || null, status_entrega: pc.statusEntrega || 'pendente',
+                    cotacao_origem_id: pc.cotacaoOrigemId || null, data: pc.data || new Date().toISOString().slice(0, 10)
+                }))));
         }
         await Promise.all(insertsFinal);
     }
@@ -16931,6 +17168,7 @@
             gestaoCompletaAtiva: true,
             quadroKanbanId: novoQuadroId,
             programacao: programacaoInicial, checklist: [], fornecedores: [], equipe: [], patrocinios: [], lotesIngresso: lotesIniciais,
+            cotacoes: [], pedidosCompra: [],
             financeiro: { lancamentos: [] }
         };
 
@@ -17002,12 +17240,15 @@
         if (grupoFinanceiro) grupoFinanceiro.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
         const grupoIngressos = document.getElementById('evento-gestao-nav-ingressos-grupo');
         if (grupoIngressos) grupoIngressos.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
+        const grupoOrcamentos = document.getElementById('evento-gestao-nav-orcamentos-grupo');
+        if (grupoOrcamentos) grupoOrcamentos.classList.toggle('hidden', !temPermissao('verFinanceiroEvento'));
 
         eventoGestaoAbaAtual = 'programacao';
         document.querySelectorAll('#evento-gestao-page .evento-gestao-nav-item, #evento-gestao-page .evento-gestao-nav-subitem').forEach(t => t.classList.remove('active'));
         document.querySelector('#evento-gestao-page .evento-gestao-nav-item[data-view="programacao"]').classList.add('active');
         if (grupoFinanceiro) grupoFinanceiro.classList.remove('aberto');
         if (grupoIngressos) grupoIngressos.classList.remove('aberto');
+        if (grupoOrcamentos) grupoOrcamentos.classList.remove('aberto');
         document.querySelectorAll('#evento-gestao-page .marketing-view').forEach(v => v.classList.add('hidden'));
         document.getElementById('evento-gestao-view-programacao').classList.remove('hidden');
 
@@ -17021,6 +17262,8 @@
         eventoGestaoRenderPedidos();
         eventoGestaoRenderDashboardIngressos();
         eventoGestaoRenderFinanceiro();
+        eventoGestaoRenderCotacoes();
+        eventoGestaoRenderPedidosCompra();
 
         document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
         document.getElementById('evento-gestao-page').classList.remove('hidden');
@@ -17055,7 +17298,7 @@
 
     // Grupos expansíveis da sidebar do evento (Financeiro, Ingressos...).
     // Adicionar um novo grupo no futuro é só incluir o prefixo aqui.
-    const EVENTO_GESTAO_GRUPOS = ['financeiro', 'ingressos'];
+    const EVENTO_GESTAO_GRUPOS = ['financeiro', 'ingressos', 'orcamentos'];
 
     function eventoGestaoTrocarAba(aba, btn) {
         eventoGestaoAbaAtual = aba;
@@ -18076,6 +18319,444 @@
             eventoGestaoRenderFinanceiro();
             eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
+    }
+
+    // ==========================================================
+    // ORÇAMENTOS: COTAÇÕES E PEDIDOS DE COMPRA
+    // Cotação é só comparação de preços — nunca vira custo sozinha.
+    // Só quando fecha com um fornecedor e vira Pedido de Compra que
+    // vira despesa de verdade no financeiro.
+    // ==========================================================
+
+    const UNIDADE_LABEL = { unidade: 'Unidade', peca: 'Peça', conjunto: 'Conjunto', kg: 'Kg', litro: 'Litro', metro: 'Metro', caixa: 'Caixa', pacote: 'Pacote', servico: 'Serviço fechado' };
+    const FORMA_PAGAMENTO_LABEL = { pix: 'PIX', boleto: 'Boleto', cartao_credito: 'Cartão de crédito', cartao_debito: 'Cartão de débito', dinheiro: 'Dinheiro', transferencia: 'Transferência' };
+
+    let cotacaoFornecedoresEmEdicao = [];
+
+    function cotacaoRenderFornecedoresForm() {
+        const container = document.getElementById('cotacao-fornecedores-lista');
+        if (cotacaoFornecedoresEmEdicao.length === 0) {
+            container.innerHTML = '<div class="bandas-vazio">Nenhum fornecedor adicionado ainda — clique no + acima.</div>';
+            return;
+        }
+        const opcoesFormaPagamento = Object.entries(FORMA_PAGAMENTO_LABEL).map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+        container.innerHTML = cotacaoFornecedoresEmEdicao.map((f, i) => `
+            <div class="demanda-subgrupo" style="border-top:1px dashed var(--line); padding-top:12px;" data-index="${i}">
+                <div class="demanda-campo-linha">
+                    <div class="demanda-campo">
+                        <label>Fornecedor</label>
+                        <input type="text" class="form-input" value="${(f.nome || '').replace(/"/g, '&quot;')}" oninput="cotacaoAtualizarCampoFornecedor(${i}, 'nome', this.value)" placeholder="Nome do fornecedor">
+                    </div>
+                    <div class="demanda-campo">
+                        <label>Preço unitário</label>
+                        <div class="input-moeda-wrap">
+                            <span class="input-moeda-prefixo">R$</span>
+                            <input type="text" class="form-input" value="${f.precoUnitario || ''}" oninput="aplicarMascaraMoeda(this); cotacaoAtualizarCampoFornecedor(${i}, 'precoUnitario', this.value)" placeholder="0,00">
+                        </div>
+                    </div>
+                </div>
+                <div class="demanda-campo-linha">
+                    <div class="demanda-campo">
+                        <label>Prazo de entrega</label>
+                        <input type="date" class="form-input" value="${f.prazoEntrega || ''}" oninput="cotacaoAtualizarCampoFornecedor(${i}, 'prazoEntrega', this.value)">
+                    </div>
+                    <div class="demanda-campo">
+                        <label>Forma de pagamento</label>
+                        <select class="form-input" onchange="cotacaoAtualizarCampoFornecedor(${i}, 'formaPagamento', this.value)">
+                            ${Object.entries(FORMA_PAGAMENTO_LABEL).map(([v, l]) => `<option value="${v}" ${f.formaPagamento === v ? 'selected' : ''}>${l}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                <div class="demanda-campo">
+                    <label>Observação</label>
+                    <input type="text" class="form-input" value="${(f.observacao || '').replace(/"/g, '&quot;')}" oninput="cotacaoAtualizarCampoFornecedor(${i}, 'observacao', this.value)" placeholder="Ex: à vista tem desconto...">
+                </div>
+                <button type="button" class="btn-icon-acao excluir" onclick="cotacaoRemoverFornecedor(${i})" style="width:fit-content; padding:6px 12px; display:flex; gap:6px; align-items:center; font-size:12px;">
+                    ${ICONE_EXCLUIR} Remover esse fornecedor
+                </button>
+            </div>`).join('');
+    }
+
+    function cotacaoAtualizarCampoFornecedor(i, campo, valor) {
+        if (cotacaoFornecedoresEmEdicao[i]) cotacaoFornecedoresEmEdicao[i][campo] = valor;
+    }
+
+    function cotacaoAdicionarFornecedor() {
+        cotacaoFornecedoresEmEdicao.push({ nome: '', precoUnitario: '', prazoEntrega: '', formaPagamento: 'pix', observacao: '' });
+        cotacaoRenderFornecedoresForm();
+    }
+
+    function cotacaoRemoverFornecedor(i) {
+        cotacaoFornecedoresEmEdicao.splice(i, 1);
+        cotacaoRenderFornecedoresForm();
+    }
+
+    function abrirModalCotacao(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const c = id ? (evento.cotacoes || []).find(x => x.id === id) : null;
+
+        document.getElementById('cotacao-titulo-modal').textContent = c ? 'Editar cotação' : 'Nova cotação';
+        document.getElementById('cotacao-id').value = c ? c.id : '';
+        document.getElementById('cotacao-descricao').value = c ? c.descricao : '';
+        document.getElementById('cotacao-unidade').value = c ? (c.unidade || 'unidade') : 'unidade';
+        document.getElementById('cotacao-quantidade').value = c ? (c.quantidade || 1) : 1;
+        document.getElementById('cotacao-prazo-decisao').value = c ? (c.prazoDecisao || '') : '';
+
+        cotacaoFornecedoresEmEdicao = c ? JSON.parse(JSON.stringify(c.fornecedoresCotados || [])) : [];
+        cotacaoRenderFornecedoresForm();
+
+        // A opção de criar tarefa no Kanban só faz sentido numa cotação
+        // nova; se já existe uma tarefa vinculada, mostra o status dela.
+        const jaVinculada = c && c.demandaId;
+        document.getElementById('cotacao-kanban-wrap').classList.toggle('hidden', !!jaVinculada);
+        document.getElementById('cotacao-kanban-vinculada-wrap').classList.toggle('hidden', !jaVinculada);
+        if (jaVinculada) {
+            const demanda = demandas.find(d => d.id === c.demandaId);
+            document.getElementById('cotacao-kanban-vinculada-info').textContent = demanda
+                ? `"${demanda.titulo}" — ${STATUS_LABEL_DEMANDA[demanda.status] || demanda.status}`
+                : 'Tarefa vinculada não encontrada (pode ter sido excluída do Kanban).';
+        }
+
+        const modal = document.getElementById('modal-cotacao');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalCotacao() {
+        const modal = document.getElementById('modal-cotacao');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    // Cria a tarefa no quadro Kanban PRÓPRIO desse evento — mesma regra
+    // do checklist: nunca mistura tarefas de eventos diferentes.
+    function criarDemandaParaCotacao(cotacao, evento) {
+        const demanda = {
+            id: 'demanda_' + Date.now() + '_cotacao',
+            eventoId: evento.id,
+            tipo: 'cotacao',
+            titulo: 'Cotação: ' + cotacao.descricao,
+            briefing: '',
+            prazo: cotacao.prazoDecisao || '',
+            status: 'briefing',
+            comentarios: [],
+            arquivos: [],
+            usuariosAtribuidos: [],
+            alertasPorFase: alertasPadraoNovos(),
+            quadroId: evento.quadroKanbanId || 'dia-a-dia'
+        };
+        demandas.push(demanda);
+        return demanda.id;
+    }
+
+    async function salvarCotacao() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.cotacoes = evento.cotacoes || [];
+
+        const idExistente = document.getElementById('cotacao-id').value;
+        const descricao = document.getElementById('cotacao-descricao').value.trim();
+        if (!descricao) { alert('Descreva o que está sendo cotado.'); return; }
+
+        const dados = {
+            descricao,
+            unidade: document.getElementById('cotacao-unidade').value,
+            quantidade: parseFloat(document.getElementById('cotacao-quantidade').value) || 1,
+            prazoDecisao: document.getElementById('cotacao-prazo-decisao').value || null,
+            fornecedoresCotados: cotacaoFornecedoresEmEdicao.filter(f => f.nome.trim())
+        };
+
+        let cotacaoSalva;
+        if (idExistente) {
+            cotacaoSalva = evento.cotacoes.find(x => x.id === idExistente);
+            if (cotacaoSalva) Object.assign(cotacaoSalva, dados);
+        } else {
+            cotacaoSalva = { id: 'cotacao_' + Date.now(), status: 'aberta', demandaId: null, pedidoCompraId: null, fornecedorEscolhidoIndex: null, ...dados };
+            evento.cotacoes.push(cotacaoSalva);
+
+            if (document.getElementById('cotacao-criar-tarefa-kanban').checked) {
+                cotacaoSalva.demandaId = criarDemandaParaCotacao(cotacaoSalva, evento);
+                await salvarDemandasStorage();
+            }
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalCotacao();
+        eventoGestaoRenderCotacoes();
+    }
+
+    async function excluirCotacao(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Excluir essa cotação?', 'Essa ação não pode ser desfeita. Se tinha uma tarefa vinculada no Kanban, ela continua existindo separadamente.', async () => {
+            evento.cotacoes = (evento.cotacoes || []).filter(x => x.id !== id);
+            await sincronizarEventoGerenciado(evento.id);
+            eventoGestaoRenderCotacoes();
+        }, 'Excluir');
+    }
+
+    // Fecha a cotação escolhendo um dos fornecedores comparados: marca a
+    // cotação como fechada e abre o Pedido de Compra já pré-preenchido
+    // com os dados daquela cotação — a pessoa só confere e salva.
+    function fecharCotacaoComFornecedor(cotacaoId, index) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const cotacao = evento.cotacoes.find(c => c.id === cotacaoId);
+        const fornecedor = cotacao.fornecedoresCotados[index];
+        if (!cotacao || !fornecedor) return;
+
+        abrirModalPedidoCompra();
+        document.getElementById('pedido-compra-cotacao-origem').value = cotacaoId;
+        document.getElementById('pedido-compra-descricao').value = cotacao.descricao;
+        document.getElementById('pedido-compra-unidade').value = cotacao.unidade || 'unidade';
+        document.getElementById('pedido-compra-quantidade').value = cotacao.quantidade || 1;
+        document.getElementById('pedido-compra-preco-unitario').value = fornecedor.precoUnitario || '';
+        document.getElementById('pedido-compra-fornecedor-nome').value = fornecedor.nome || '';
+        document.getElementById('pedido-compra-forma-pagamento').value = fornecedor.formaPagamento || 'pix';
+        document.getElementById('pedido-compra-prazo-entrega').value = fornecedor.prazoEntrega || '';
+        pedidoCompraAtualizarValorTotal();
+    }
+
+    function eventoGestaoRenderCotacoes() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-cotacoes-lista');
+        if (!evento || !lista) return;
+
+        const itens = evento.cotacoes || [];
+        if (itens.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Nenhuma cotação em aberto ainda.</div>';
+            return;
+        }
+
+        lista.innerHTML = itens.map(c => {
+            const demanda = c.demandaId ? demandas.find(d => d.id === c.demandaId) : null;
+            const tagKanban = demanda ? `<span class="usuario-badge-convite" style="background:var(--green-dark); color:#fff;">Kanban: ${STATUS_LABEL_DEMANDA[demanda.status] || demanda.status}</span>` : '';
+            const tagStatus = c.status === 'fechada'
+                ? `<span class="usuario-badge-convite" style="background:#DCFCE7; color:#166534;">Fechada</span>`
+                : `<span class="usuario-badge-convite" style="background:#FEF3C7; color:#B45309;">Em aberto</span>`;
+
+            const linhasFornecedores = (c.fornecedoresCotados || []).map((f, i) => {
+                const venceu = c.status === 'fechada' && c.fornecedorEscolhidoIndex === i;
+                return `
+                <div class="fin-linha" style="${venceu ? 'background:#DCFCE7;' : ''}">
+                    <span class="fin-linha-desc">${f.nome}${venceu ? ' <strong>— fechado com esse</strong>' : ''}${f.observacao ? `<span class="fin-linha-tag">${f.observacao}</span>` : ''}<span class="fin-linha-tag">${FORMA_PAGAMENTO_LABEL[f.formaPagamento] || ''}</span>${f.prazoEntrega ? `<span class="fin-linha-tag">Entrega: ${new Date(f.prazoEntrega + 'T00:00:00').toLocaleDateString('pt-BR')}</span>` : ''}</span>
+                    <span class="fin-linha-valor">${f.precoUnitario ? 'R$ ' + f.precoUnitario : '—'}</span>
+                    <span class="fin-linha-acoes">
+                        ${c.status !== 'fechada' ? `<button class="btn-save" style="padding:5px 10px; font-size:11.5px;" onclick="fecharCotacaoComFornecedor('${c.id}', ${i})">Fechar com esse</button>` : ''}
+                    </span>
+                </div>`;
+            }).join('') || '<div class="bandas-vazio" style="padding:10px;">Nenhum fornecedor cotado ainda.</div>';
+
+            return `
+            <div class="usuario-item" style="flex-direction:column; align-items:stretch; gap:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div class="usuario-item-info">
+                        <div class="usuario-item-nome">${c.descricao} ${tagStatus} ${tagKanban}</div>
+                        <div class="usuario-item-detalhe">${UNIDADE_LABEL[c.unidade] || c.unidade} · Qtd: ${c.quantidade}${c.prazoDecisao ? ' · Decidir até: ' + new Date(c.prazoDecisao + 'T00:00:00').toLocaleDateString('pt-BR') : ''}</div>
+                    </div>
+                    <div class="usuario-item-acoes">
+                        <button class="btn-icon-acao" onclick="abrirModalCotacao('${c.id}')" title="Editar">${ICONE_EDITAR}</button>
+                        <button class="btn-icon-acao excluir" onclick="excluirCotacao('${c.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                    </div>
+                </div>
+                <div>${linhasFornecedores}</div>
+            </div>`;
+        }).join('');
+    }
+
+    // ---------- PEDIDOS DE COMPRA ----------
+    function pedidoCompraAtualizarValorTotal() {
+        const qtd = parseFloat(document.getElementById('pedido-compra-quantidade').value) || 0;
+        const precoTexto = document.getElementById('pedido-compra-preco-unitario').value.trim();
+        const preco = normalizarValorMonetario(precoTexto);
+        if (qtd > 0 && preco > 0) {
+            document.getElementById('pedido-compra-valor-total').value = (qtd * preco).toFixed(2).replace('.', ',');
+        } else {
+            document.getElementById('pedido-compra-valor-total').value = '';
+        }
+        pedidoCompraAtualizarBadge();
+    }
+
+    function pedidoCompraAtualizarBadge() {
+        const badge = document.getElementById('pedido-compra-status-badge');
+        const total = document.getElementById('pedido-compra-valor-total').value;
+        if (total) {
+            const s = statusPagamentoInfo(total, document.getElementById('pedido-compra-valor-pago').value);
+            badge.textContent = s.texto;
+            badge.style.background = s.cor.bg;
+            badge.style.color = s.cor.fg;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function abrirModalPedidoCompra(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const pc = id ? (evento.pedidosCompra || []).find(x => x.id === id) : null;
+
+        document.getElementById('pedido-compra-titulo-modal').textContent = pc ? 'Editar pedido de compra' : 'Novo pedido de compra';
+        document.getElementById('pedido-compra-id').value = pc ? pc.id : '';
+        document.getElementById('pedido-compra-cotacao-origem').value = pc ? (pc.cotacaoOrigemId || '') : '';
+        document.getElementById('pedido-compra-descricao').value = pc ? pc.descricao : '';
+        document.getElementById('pedido-compra-unidade').value = pc ? (pc.unidade || 'unidade') : 'unidade';
+        document.getElementById('pedido-compra-quantidade').value = pc ? (pc.quantidade || 1) : 1;
+        document.getElementById('pedido-compra-preco-unitario').value = pc && pc.precoUnitario ? String(pc.precoUnitario).replace('.', ',') : '';
+        document.getElementById('pedido-compra-fornecedor-nome').value = pc ? (pc.fornecedorNome || '') : '';
+        document.getElementById('pedido-compra-forma-pagamento').value = pc ? (pc.formaPagamento || 'pix') : 'pix';
+        document.getElementById('pedido-compra-valor-pago').value = (pc && pc.valorPago) ? String(pc.valorPago).replace('.', ',') : '';
+        document.getElementById('pedido-compra-previsao-pagamento').value = pc ? (pc.previsaoPagamento || '') : '';
+        document.getElementById('pedido-compra-status-entrega').value = pc ? (pc.statusEntrega || 'pendente') : 'pendente';
+        document.getElementById('pedido-compra-prazo-entrega').value = pc ? (pc.prazoEntrega || '') : '';
+        pedidoCompraAtualizarValorTotal();
+
+        const modal = document.getElementById('modal-pedido-compra');
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+
+    function fecharModalPedidoCompra() {
+        const modal = document.getElementById('modal-pedido-compra');
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+
+    // Mesmo princípio de fornecedor/banda/equipe: todo pedido de compra
+    // com valor vira custo automático no financeiro — é essa a diferença
+    // pra cotação, que nunca gera lançamento nenhum.
+    function sincronizarLancamentoDePedidoCompra(evento, pedido) {
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+        const idLancamento = 'lanc_pedidocompra_' + pedido.id;
+        const valorNum = normalizarValorMonetario(pedido.precoUnitario) * (parseFloat(pedido.quantidade) || 1);
+        const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
+
+        if (!valorNum) {
+            if (existente) evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== idLancamento);
+            return;
+        }
+
+        const dados = {
+            tipo: 'custo_variavel',
+            descricao: `Compra — ${pedido.descricao}${pedido.fornecedorNome ? ' (' + pedido.fornecedorNome + ')' : ''}`,
+            valor: valorNum,
+            data: existente ? existente.data : new Date().toISOString().slice(0, 10),
+            tipoItem: 'produto',
+            unidade: pedido.unidade || null,
+            quantidade: pedido.quantidade || 1,
+            precoUnitario: normalizarValorMonetario(pedido.precoUnitario),
+            fornecedorId: pedido.fornecedorId || null,
+            formaPagamento: pedido.formaPagamento || null,
+            valorPago: pedido.valorPago || 0,
+            previsaoPagamento: pedido.previsaoPagamento || null,
+            statusEntrega: pedido.statusEntrega || 'pendente',
+            previsaoEntrega: pedido.prazoEntrega || null
+        };
+        if (existente) Object.assign(existente, dados);
+        else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
+    }
+
+    async function salvarPedidoCompra() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        evento.pedidosCompra = evento.pedidosCompra || [];
+
+        const idExistente = document.getElementById('pedido-compra-id').value;
+        const descricao = document.getElementById('pedido-compra-descricao').value.trim();
+        if (!descricao) { alert('Descreva o que está sendo comprado.'); return; }
+
+        const dados = {
+            descricao,
+            unidade: document.getElementById('pedido-compra-unidade').value,
+            quantidade: parseFloat(document.getElementById('pedido-compra-quantidade').value) || 1,
+            precoUnitario: normalizarValorMonetario(document.getElementById('pedido-compra-preco-unitario').value),
+            fornecedorNome: document.getElementById('pedido-compra-fornecedor-nome').value.trim(),
+            formaPagamento: document.getElementById('pedido-compra-forma-pagamento').value,
+            valorPago: parseFloat(document.getElementById('pedido-compra-valor-pago').value.trim().replace(/\./g, '').replace(',', '.')) || 0,
+            previsaoPagamento: document.getElementById('pedido-compra-previsao-pagamento').value || null,
+            statusEntrega: document.getElementById('pedido-compra-status-entrega').value,
+            prazoEntrega: document.getElementById('pedido-compra-prazo-entrega').value || null
+        };
+
+        let pedidoSalvo;
+        if (idExistente) {
+            pedidoSalvo = evento.pedidosCompra.find(x => x.id === idExistente);
+            if (pedidoSalvo) Object.assign(pedidoSalvo, dados);
+        } else {
+            pedidoSalvo = { id: 'pedidocompra_' + Date.now(), data: new Date().toISOString().slice(0, 10), ...dados };
+            evento.pedidosCompra.push(pedidoSalvo);
+        }
+
+        sincronizarLancamentoDePedidoCompra(evento, pedidoSalvo);
+
+        // Se esse pedido nasceu de uma cotação, marca ela como fechada e
+        // cruza os dois registros — assim dá pra ver de onde veio a compra.
+        const cotacaoOrigemId = document.getElementById('pedido-compra-cotacao-origem').value;
+        if (cotacaoOrigemId) {
+            const cotacao = (evento.cotacoes || []).find(c => c.id === cotacaoOrigemId);
+            if (cotacao) {
+                cotacao.status = 'fechada';
+                cotacao.pedidoCompraId = pedidoSalvo.id;
+                const idxEscolhido = (cotacao.fornecedoresCotados || []).findIndex(f => f.nome === pedidoSalvo.fornecedorNome);
+                if (idxEscolhido >= 0) cotacao.fornecedorEscolhidoIndex = idxEscolhido;
+            }
+        }
+
+        await sincronizarEventoGerenciado(evento.id);
+        fecharModalPedidoCompra();
+        eventoGestaoRenderPedidosCompra();
+        eventoGestaoRenderCotacoes();
+        eventoGestaoRenderFinanceiro();
+        eventoGestaoRenderResumoFinanceiro();
+    }
+
+    async function excluirPedidoCompra(id) {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        if (!evento) return;
+        customConfirm('Excluir esse pedido de compra?', 'Essa ação não pode ser desfeita. O custo gerado por ele também será removido do financeiro.', async () => {
+            evento.pedidosCompra = (evento.pedidosCompra || []).filter(x => x.id !== id);
+            evento.financeiro = evento.financeiro || { lancamentos: [] };
+            evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== 'lanc_pedidocompra_' + id);
+            await sincronizarEventoGerenciado(evento.id);
+            eventoGestaoRenderPedidosCompra();
+            eventoGestaoRenderFinanceiro();
+            eventoGestaoRenderResumoFinanceiro();
+        }, 'Excluir');
+    }
+
+    function eventoGestaoRenderPedidosCompra() {
+        const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
+        const lista = document.getElementById('evento-gestao-pedidos-compra-lista');
+        if (!evento || !lista) return;
+
+        const itens = evento.pedidosCompra || [];
+        if (itens.length === 0) {
+            lista.innerHTML = '<div class="bandas-vazio">Nenhum pedido de compra ainda.</div>';
+            return;
+        }
+
+        const STATUS_ENTREGA_LABEL_PC = { pendente: 'Pendente', a_caminho: 'A caminho', concluido: 'Recebido' };
+        lista.innerHTML = itens.map(pc => {
+            const total = normalizarValorMonetario(pc.precoUnitario) * (parseFloat(pc.quantidade) || 1);
+            const statusPg = statusPagamentoInfo(total, pc.valorPago);
+            const detalhes = [UNIDADE_LABEL[pc.unidade] || pc.unidade, 'Qtd: ' + pc.quantidade];
+            if (pc.fornecedorNome) detalhes.push(pc.fornecedorNome);
+            if (pc.cotacaoOrigemId) detalhes.push('Veio de uma cotação');
+            if (pc.prazoEntrega) detalhes.push('Entrega: ' + new Date(pc.prazoEntrega + 'T00:00:00').toLocaleDateString('pt-BR'));
+
+            return `
+            <div class="usuario-item">
+                <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${(pc.fornecedorNome || pc.descricao).charAt(0).toUpperCase()}</div>
+                <div class="usuario-item-info">
+                    <div class="usuario-item-nome">${pc.descricao}</div>
+                    <div class="usuario-item-detalhe">${detalhes.join(' · ')}</div>
+                </div>
+                <span class="cliente-item-idade-badge" style="background:${statusPg.cor.bg}; color:${statusPg.cor.fg};">${statusPg.texto}</span>
+                <span class="usuario-badge-convite">${STATUS_ENTREGA_LABEL_PC[pc.statusEntrega] || 'Pendente'}</span>
+                <div class="usuario-item-acoes">
+                    <button class="btn-icon-acao" onclick="abrirModalPedidoCompra('${pc.id}')" title="Editar">${ICONE_EDITAR}</button>
+                    <button class="btn-icon-acao excluir" onclick="excluirPedidoCompra('${pc.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // ---------- LOTES DE INGRESSO ----------
@@ -20204,6 +20885,7 @@
         video:        { nome: 'Vídeo',           funcaoId: 'agencia',  cor: '#7C3AED' },
         foto:         { nome: 'Foto',            funcaoId: 'agencia',  cor: '#0891B2' },
         trafego_pago: { nome: 'Tráfego pago',   funcaoId: 'gerente',  cor: '#92400E' },
+        cotacao:      { nome: 'Cotação/Orçamento', funcaoId: null,    cor: '#0F766E' },
         outro:        { nome: 'Outro',           funcaoId: null,       cor: '#6B7280' }
     };
 
@@ -20730,7 +21412,7 @@
         if (btnExcluirTarefa) btnExcluirTarefa.classList.toggle('hidden', !temPermissao('excluirMarketing'));
         
         // Restaurar tipo: se é um tipo customizado (não está na lista), mostrar campo de entrada
-        const tiposFixos = ['criacao_arte', 'publicacao', 'story', 'reels', 'foto', 'video'];
+        const tiposFixos = ['criacao_arte', 'publicacao', 'story', 'reels', 'foto', 'video', 'trafego_pago', 'cotacao'];
         if (tiposFixos.includes(d.tipo)) {
             document.getElementById('demanda-form-tipo').value = d.tipo;
             document.getElementById('demanda-form-tipo-customizado').value = '';
