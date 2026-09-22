@@ -10675,15 +10675,30 @@
                                 <input type="text" id="equipe-item-funcao" class="form-input" placeholder="Ex: Segurança, Bar, Caixa, Som...">
                             </div>
                             <div class="demanda-campo">
-                                <label>Horário</label>
-                                <input type="text" id="equipe-item-horario" class="form-input" placeholder="Ex: 18h às 02h">
+                                <label>Tipo de contratação</label>
+                                <select id="equipe-item-tipo-contratacao" class="form-input" onchange="equipeItemAtualizarCampos()">
+                                    <option value="freelancer">Freelancer</option>
+                                    <option value="registrado">Registrado(a)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="demanda-campo-linha">
+                            <div class="demanda-campo">
+                                <label>Horário de entrada</label>
+                                <input type="time" id="equipe-item-horario-entrada" class="form-input">
+                            </div>
+                            <div class="demanda-campo">
+                                <label>Horário de saída</label>
+                                <input type="time" id="equipe-item-horario-saida" class="form-input" placeholder="Se souber">
                             </div>
                         </div>
                         <div class="demanda-campo">
                             <label>Contato</label>
                             <input type="text" id="equipe-item-contato" class="form-input" placeholder="Telefone">
                         </div>
-                        <div class="demanda-campo-linha">
+
+                        <!-- Freelancer: a diária JÁ é o custo total do evento. -->
+                        <div class="demanda-campo-linha" id="equipe-item-freelancer-wrap">
                             <div class="demanda-campo">
                                 <label>Valor/diária</label>
                                 <div class="input-moeda-wrap">
@@ -10699,6 +10714,40 @@
                                     <option value="pago">Pago</option>
                                 </select>
                             </div>
+                        </div>
+
+                        <!-- Registrado(a): só gera custo extra se sair do horário normal
+                             de trabalho — o salário fixo já cobre o resto. -->
+                        <div class="hidden" id="equipe-item-registrado-wrap">
+                            <div class="demanda-campo">
+                                <label>Esse evento está dentro do horário normal de trabalho dela?</label>
+                                <select id="equipe-item-dentro-horario-normal" class="form-input" onchange="equipeItemAtualizarCampos()">
+                                    <option value="sim">Sim — sem custo extra, já incluso no salário</option>
+                                    <option value="nao">Não — teve hora extra</option>
+                                </select>
+                            </div>
+                            <div class="demanda-campo-linha hidden" id="equipe-item-hora-extra-wrap">
+                                <div class="demanda-campo">
+                                    <label>Custo da hora extra pra esse evento</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="equipe-item-valor-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Status do pagamento</label>
+                                    <select id="equipe-item-status-pagamento-registrado" class="form-input">
+                                        <option value="pendente">Pendente</option>
+                                        <option value="parcial">Parcial</option>
+                                        <option value="pago">Pago</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="demanda-campo">
+                            <label>Observação</label>
+                            <textarea id="equipe-item-observacao" class="form-input" rows="2" placeholder="Qualquer detalhe importante sobre essa pessoa nesse evento..."></textarea>
                         </div>
                     </div>
                     <div class="modal-evento-footer">
@@ -15982,7 +16031,14 @@
                     previsaoPagamento: f.previsao_pagamento, prazoEntrega: f.prazo_entrega
                 })),
             equipe: equipeR.data.filter(eq => eq.evento_id === row.id)
-                .map(eq => ({ id: eq.id, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato, valor: eq.valor, statusPagamento: eq.status_pagamento })),
+                .map(eq => ({
+                    id: eq.id, nome: eq.nome, funcao: eq.funcao, contato: eq.contato,
+                    tipoContratacao: eq.tipo_contratacao || 'freelancer',
+                    horarioEntrada: eq.horario_entrada, horarioSaida: eq.horario_saida,
+                    observacao: eq.observacao, valor: eq.valor, statusPagamento: eq.status_pagamento,
+                    dentroHorarioNormal: eq.dentro_horario_normal || 'sim',
+                    valorRegistrado: eq.valor_registrado, statusPagamentoRegistrado: eq.status_pagamento_registrado
+                })),
             patrocinios: patroR.data.filter(p => p.evento_id === row.id)
                 .map(p => ({ id: p.id, nomeEmpresa: p.nome_empresa, tipo: p.tipo, nivel: p.nivel, valorDinheiro: parseFloat(p.valor_dinheiro) || 0, descricaoPermuta: p.descricao_permuta || '', valorPermuta: p.valor_permuta ? parseFloat(p.valor_permuta) : null, entregaveis: (p.entregaveis && Object.keys(p.entregaveis).length) ? p.entregaveis : entregaveisEstruturaVazia(), formaPagamento: p.forma_pagamento, statusPagamento: p.status_pagamento, previsaoPagamento: p.previsao_pagamento })),
             lotesIngresso: loteR.data.filter(l => l.evento_id === row.id)
@@ -16044,7 +16100,12 @@
                 previsao_pagamento: f.previsaoPagamento || null, prazo_entrega: f.prazoEntrega || null
             }))));
         if (evento.equipe.length) inserts.push(supabaseClient.from('equipe_itens').insert(
-            evento.equipe.map(eq => ({ id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, horario: eq.horario, contato: eq.contato, valor: eq.valor || null, status_pagamento: eq.statusPagamento || null }))));
+            evento.equipe.map(eq => ({
+                id: eq.id, evento_id: eventoId, nome: eq.nome, funcao: eq.funcao, contato: eq.contato,
+                tipo_contratacao: eq.tipoContratacao || null, horario_entrada: eq.horarioEntrada || null, horario_saida: eq.horarioSaida || null,
+                observacao: eq.observacao || null, valor: eq.valor || null, status_pagamento: eq.statusPagamento || null,
+                dentro_horario_normal: eq.dentroHorarioNormal || null, valor_registrado: eq.valorRegistrado || null, status_pagamento_registrado: eq.statusPagamentoRegistrado || null
+            }))));
         if (evento.patrocinios.length) inserts.push(supabaseClient.from('patrocinios').insert(
             evento.patrocinios.map(p => ({ id: p.id, evento_id: eventoId, nome_empresa: p.nomeEmpresa, tipo: p.tipo, nivel: p.nivel, valor_dinheiro: p.valorDinheiro, descricao_permuta: p.descricaoPermuta, valor_permuta: p.valorPermuta || null, entregaveis: p.entregaveis, forma_pagamento: p.formaPagamento || null, status_pagamento: p.statusPagamento, previsao_pagamento: p.previsaoPagamento || null }))));
         if (evento.lotesIngresso.length) inserts.push(supabaseClient.from('lotes_ingresso').insert(
@@ -17506,18 +17567,34 @@
             return;
         }
 
-        lista.innerHTML = itens.map(p => `
+        const TIPO_LABEL = { freelancer: 'Freelancer', registrado: 'Registrado(a)' };
+        lista.innerHTML = itens.map(p => {
+            const horarioTexto = p.horarioEntrada
+                ? p.horarioEntrada + (p.horarioSaida ? ' às ' + p.horarioSaida : ' (sem saída definida)')
+                : 'Horário não definido';
+            return `
             <div class="usuario-item">
                 <div class="usuario-avatar" style="background:var(--brown); width:40px; height:40px; font-size:13px;">${p.nome.charAt(0).toUpperCase()}</div>
                 <div class="usuario-item-info">
-                    <div class="usuario-item-nome">${p.nome} ${p.funcao ? `<span class="usuario-badge-convite">${p.funcao}</span>` : ''}</div>
-                    <div class="usuario-item-detalhe">${p.horario || 'Horário não definido'}${p.contato ? ' · ' + p.contato : ''}</div>
+                    <div class="usuario-item-nome">${p.nome} ${p.funcao ? `<span class="usuario-badge-convite">${p.funcao}</span>` : ''} <span class="usuario-badge-convite">${TIPO_LABEL[p.tipoContratacao] || 'Freelancer'}</span></div>
+                    <div class="usuario-item-detalhe">${horarioTexto}${p.contato ? ' · ' + p.contato : ''}${p.observacao ? ' · ' + p.observacao : ''}</div>
                 </div>
                 <div class="usuario-item-acoes">
                     <button class="btn-icon-acao" onclick="abrirModalEquipeItem('${p.id}')" title="Editar">${ICONE_EDITAR}</button>
                     <button class="btn-icon-acao excluir" onclick="excluirEquipeItem('${p.id}')" title="Excluir">${ICONE_EXCLUIR}</button>
                 </div>
-            </div>`).join('');
+            </div>`;
+        }).join('');
+    }
+
+    function equipeItemAtualizarCampos() {
+        const ehRegistrado = document.getElementById('equipe-item-tipo-contratacao').value === 'registrado';
+        document.getElementById('equipe-item-freelancer-wrap').classList.toggle('hidden', ehRegistrado);
+        document.getElementById('equipe-item-registrado-wrap').classList.toggle('hidden', !ehRegistrado);
+        if (ehRegistrado) {
+            const temHoraExtra = document.getElementById('equipe-item-dentro-horario-normal').value === 'nao';
+            document.getElementById('equipe-item-hora-extra-wrap').classList.toggle('hidden', !temHoraExtra);
+        }
     }
 
     function abrirModalEquipeItem(id) {
@@ -17528,10 +17605,17 @@
         document.getElementById('equipe-item-id').value = p ? p.id : '';
         document.getElementById('equipe-item-nome').value = p ? p.nome : '';
         document.getElementById('equipe-item-funcao').value = p ? (p.funcao || '') : '';
-        document.getElementById('equipe-item-horario').value = p ? (p.horario || '') : '';
+        document.getElementById('equipe-item-tipo-contratacao').value = p ? (p.tipoContratacao || 'freelancer') : 'freelancer';
+        document.getElementById('equipe-item-horario-entrada').value = p ? (p.horarioEntrada || '') : '';
+        document.getElementById('equipe-item-horario-saida').value = p ? (p.horarioSaida || '') : '';
         document.getElementById('equipe-item-contato').value = p ? (p.contato || '') : '';
+        document.getElementById('equipe-item-observacao').value = p ? (p.observacao || '') : '';
         document.getElementById('equipe-item-valor').value = p ? (p.valor || '') : '';
         document.getElementById('equipe-item-status-pagamento').value = p ? (p.statusPagamento || 'pendente') : 'pendente';
+        document.getElementById('equipe-item-dentro-horario-normal').value = p ? (p.dentroHorarioNormal || 'sim') : 'sim';
+        document.getElementById('equipe-item-valor-registrado').value = p ? (p.valorRegistrado || '') : '';
+        document.getElementById('equipe-item-status-pagamento-registrado').value = p ? (p.statusPagamentoRegistrado || 'pendente') : 'pendente';
+        equipeItemAtualizarCampos();
 
         const modal = document.getElementById('modal-equipe-item');
         modal.classList.remove('hidden');
@@ -17544,13 +17628,24 @@
         modal.classList.remove('active');
     }
 
-    // Mesmo princípio de fornecedor/patrocínio/banda: se tem valor, vira
-    // custo automático — assim uma diária de segurança ou de bar entra no
-    // financeiro sem precisar lançar duas vezes.
+    // Freelancer: a diária é sempre o custo. Registrado(a): só existe custo
+    // extra pra esse evento quando ela sai do horário normal de trabalho —
+    // do contrário, o salário fixo já cobre, então não gera lançamento.
+    function equipeCustoEfetivo(pessoa) {
+        if (pessoa.tipoContratacao === 'registrado') {
+            if (pessoa.dentroHorarioNormal === 'nao') {
+                return { valor: pessoa.valorRegistrado, status: pessoa.statusPagamentoRegistrado };
+            }
+            return { valor: '', status: null };
+        }
+        return { valor: pessoa.valor, status: pessoa.statusPagamento };
+    }
+
     function sincronizarLancamentoDeEquipe(evento, pessoa) {
         evento.financeiro = evento.financeiro || { lancamentos: [] };
         const idLancamento = 'lanc_equipe_' + pessoa.id;
-        const valorNum = parseFloat(String(pessoa.valor || '').replace(/\./g, '').replace(',', '.')) || 0;
+        const custo = equipeCustoEfetivo(pessoa);
+        const valorNum = parseFloat(String(custo.valor || '').replace(/\./g, '').replace(',', '.')) || 0;
         const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
 
         if (!valorNum) {
@@ -17558,12 +17653,13 @@
             return;
         }
 
+        const rotuloTipo = pessoa.tipoContratacao === 'registrado' ? ' — hora extra' : '';
         const dados = {
             tipo: 'custo_fixo',
-            descricao: `Equipe — ${pessoa.nome}${pessoa.funcao ? ' (' + pessoa.funcao + ')' : ''}`,
+            descricao: `Equipe — ${pessoa.nome}${pessoa.funcao ? ' (' + pessoa.funcao + ')' : ''}${rotuloTipo}`,
             valor: valorNum,
             data: existente ? existente.data : new Date().toISOString().slice(0, 10),
-            statusPagamento: pessoa.statusPagamento || 'pendente'
+            statusPagamento: custo.status || 'pendente'
         };
         if (existente) Object.assign(existente, dados);
         else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
@@ -17581,10 +17677,16 @@
         const dados = {
             nome,
             funcao: document.getElementById('equipe-item-funcao').value.trim(),
-            horario: document.getElementById('equipe-item-horario').value.trim(),
+            tipoContratacao: document.getElementById('equipe-item-tipo-contratacao').value,
+            horarioEntrada: document.getElementById('equipe-item-horario-entrada').value || null,
+            horarioSaida: document.getElementById('equipe-item-horario-saida').value || null,
             contato: document.getElementById('equipe-item-contato').value.trim(),
+            observacao: document.getElementById('equipe-item-observacao').value.trim(),
             valor: document.getElementById('equipe-item-valor').value.trim(),
-            statusPagamento: document.getElementById('equipe-item-status-pagamento').value
+            statusPagamento: document.getElementById('equipe-item-status-pagamento').value,
+            dentroHorarioNormal: document.getElementById('equipe-item-dentro-horario-normal').value,
+            valorRegistrado: document.getElementById('equipe-item-valor-registrado').value.trim(),
+            statusPagamentoRegistrado: document.getElementById('equipe-item-status-pagamento-registrado').value
         };
 
         let pessoaSalva;
