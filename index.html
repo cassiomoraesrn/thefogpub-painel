@@ -17328,25 +17328,92 @@
             prazoEntrega: document.getElementById('fornecedor-prazo-entrega').value || null
         };
 
+        let fornecedorSalvo;
         if (idExistente) {
-            const f = evento.fornecedores.find(x => x.id === idExistente);
-            if (f) Object.assign(f, dados);
+            fornecedorSalvo = evento.fornecedores.find(x => x.id === idExistente);
+            if (fornecedorSalvo) Object.assign(fornecedorSalvo, dados);
         } else {
-            evento.fornecedores.push({ id: 'forn_' + Date.now(), ...dados });
+            fornecedorSalvo = { id: 'forn_' + Date.now(), ...dados };
+            evento.fornecedores.push(fornecedorSalvo);
         }
+
+        sincronizarLancamentoDeFornecedor(evento, fornecedorSalvo);
 
         await sincronizarEventoGerenciado(evento.id);
         fecharModalFornecedor();
         eventoGestaoRenderFornecedores();
+        eventoGestaoRenderFinanceiro();
+        eventoGestaoRenderResumoFinanceiro();
+    }
+
+    // Todo fornecedor com valor vira automaticamente um custo no financeiro
+    // do evento — o id fixo (baseado no id do fornecedor) garante que
+    // editar o fornecedor de novo atualiza o mesmo lançamento, em vez de
+    // criar um duplicado a cada salvamento.
+    function sincronizarLancamentoDeFornecedor(evento, fornecedor) {
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+        const idLancamento = 'lanc_fornecedor_' + fornecedor.id;
+        const valorNum = parseFloat(String(fornecedor.valor || '').replace(/\./g, '').replace(',', '.')) || 0;
+        const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
+
+        if (!valorNum) {
+            // Fornecedor sem valor definido não gera custo — remove o
+            // lançamento se um dia já teve valor e foi zerado.
+            if (existente) evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== idLancamento);
+            return;
+        }
+
+        const dados = {
+            tipo: 'custo_fixo',
+            descricao: `Fornecedor — ${fornecedor.nome}${fornecedor.servico ? ' (' + fornecedor.servico + ')' : ''}`,
+            valor: valorNum,
+            data: existente ? existente.data : new Date().toISOString().slice(0, 10),
+            tipoItem: 'servico',
+            fornecedorId: fornecedor.id,
+            formaPagamento: fornecedor.formaPagamento || null,
+            statusPagamento: fornecedor.statusPagamento || 'pendente',
+            previsaoPagamento: fornecedor.previsaoPagamento || null,
+            previsaoEntrega: fornecedor.prazoEntrega || null
+        };
+        if (existente) Object.assign(existente, dados);
+        else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
+    }
+
+    // Mesmo princípio do fornecedor, mas pro lado da receita: todo
+    // patrocínio com valor em dinheiro (permuta não conta, não é dinheiro
+    // de verdade entrando no caixa) vira uma receita automática.
+    function sincronizarLancamentoDePatrocinio(evento, patrocinio) {
+        evento.financeiro = evento.financeiro || { lancamentos: [] };
+        const idLancamento = 'lanc_patrocinio_' + patrocinio.id;
+        const existente = evento.financeiro.lancamentos.find(x => x.id === idLancamento);
+
+        if (!patrocinio.valorDinheiro) {
+            if (existente) evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== idLancamento);
+            return;
+        }
+
+        const dados = {
+            tipo: 'receita',
+            origem: 'patrocinio',
+            descricao: `Patrocínio — ${patrocinio.nomeEmpresa}`,
+            valor: patrocinio.valorDinheiro,
+            data: existente ? existente.data : new Date().toISOString().slice(0, 10)
+        };
+        if (existente) Object.assign(existente, dados);
+        else evento.financeiro.lancamentos.push({ id: idLancamento, ...dados });
     }
 
     async function excluirFornecedor(id) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        customConfirm('Excluir esse fornecedor?', 'Essa ação não pode ser desfeita.', async () => {
+        customConfirm('Excluir esse fornecedor?', 'Essa ação não pode ser desfeita. O lançamento financeiro gerado por ele também será removido.', async () => {
             evento.fornecedores = (evento.fornecedores || []).filter(x => x.id !== id);
+            evento.financeiro = evento.financeiro || { lancamentos: [] };
+            evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== 'lanc_fornecedor_' + id);
             await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderFornecedores();
+            eventoGestaoRenderFinanceiro();
+            eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
     }
 
@@ -17618,29 +17685,37 @@
             previsaoPagamento: document.getElementById('patrocinio-previsao-pagamento').value || null
         };
 
+        let patrocinioSalvo;
         if (idExistente) {
-            const p = evento.patrocinios.find(x => x.id === idExistente);
-            if (p) {
-                delete p.legado;
-                Object.assign(p, dados);
+            patrocinioSalvo = evento.patrocinios.find(x => x.id === idExistente);
+            if (patrocinioSalvo) {
+                delete patrocinioSalvo.legado;
+                Object.assign(patrocinioSalvo, dados);
             }
         } else {
-            evento.patrocinios.push({ id: 'patro_' + Date.now(), ...dados });
+            patrocinioSalvo = { id: 'patro_' + Date.now(), ...dados };
+            evento.patrocinios.push(patrocinioSalvo);
         }
+
+        sincronizarLancamentoDePatrocinio(evento, patrocinioSalvo);
 
         await sincronizarEventoGerenciado(evento.id);
         fecharModalPatrocinio();
         eventoGestaoRenderPatrocinios();
+        eventoGestaoRenderFinanceiro();
         eventoGestaoRenderResumoFinanceiro();
     }
 
     async function excluirPatrocinio(id) {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento) return;
-        customConfirm('Excluir esse patrocínio/parceria?', 'Essa ação não pode ser desfeita.', async () => {
+        customConfirm('Excluir esse patrocínio/parceria?', 'Essa ação não pode ser desfeita. O lançamento de receita gerado por ele também será removido.', async () => {
             evento.patrocinios = (evento.patrocinios || []).filter(x => x.id !== id);
+            evento.financeiro = evento.financeiro || { lancamentos: [] };
+            evento.financeiro.lancamentos = evento.financeiro.lancamentos.filter(x => x.id !== 'lanc_patrocinio_' + id);
             await sincronizarEventoGerenciado(evento.id);
             eventoGestaoRenderPatrocinios();
+            eventoGestaoRenderFinanceiro();
             eventoGestaoRenderResumoFinanceiro();
         }, 'Excluir');
     }
