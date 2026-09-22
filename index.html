@@ -6879,19 +6879,40 @@
         .demanda-modal-corpo {
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 18px;
+        }
+
+        /* Agrupa campos relacionados dentro de um modal (ex: bloco de
+           pagamento) com o mesmo respiro do corpo do modal — sem isso, uma
+           div normal não dá espaço nenhum entre os campos internos. */
+        .demanda-subgrupo {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+        }
+
+        .status-pagamento-badge-modal {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 700;
+            width: fit-content;
         }
 
         .demanda-campo {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 7px;
         }
 
         .demanda-campo-linha {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 16px;
         }
 
         @media (max-width: 600px) {
@@ -10606,38 +10627,41 @@
                                 <input type="text" id="fornecedor-contato" class="form-input" placeholder="Telefone ou e-mail">
                             </div>
                         </div>
-                        <div class="demanda-campo-linha">
-                            <div class="demanda-campo">
-                                <label>Valor a pagar</label>
-                                <div class="input-moeda-wrap">
-                                    <span class="input-moeda-prefixo">R$</span>
-                                    <input type="text" id="fornecedor-valor" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                        <div class="demanda-subgrupo">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Valor a pagar</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="fornecedor-valor" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); fornecedorAtualizarBadge()">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Forma de pagamento</label>
+                                    <select id="fornecedor-forma-pagamento" class="form-input">
+                                        <option value="pix">PIX</option>
+                                        <option value="boleto">Boleto</option>
+                                        <option value="cartao_credito">Cartão de crédito</option>
+                                        <option value="cartao_debito">Cartão de débito</option>
+                                        <option value="dinheiro">Dinheiro</option>
+                                        <option value="transferencia">Transferência</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="demanda-campo">
-                                <label>Forma de pagamento</label>
-                                <select id="fornecedor-forma-pagamento" class="form-input">
-                                    <option value="pix">PIX</option>
-                                    <option value="boleto">Boleto</option>
-                                    <option value="cartao_credito">Cartão de crédito</option>
-                                    <option value="cartao_debito">Cartão de débito</option>
-                                    <option value="dinheiro">Dinheiro</option>
-                                    <option value="transferencia">Transferência</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="demanda-campo-linha">
-                            <div class="demanda-campo">
-                                <label>Quanto já foi pago</label>
-                                <div class="input-moeda-wrap">
-                                    <span class="input-moeda-prefixo">R$</span>
-                                    <input type="text" id="fornecedor-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não pagou nada)" oninput="aplicarMascaraMoeda(this)">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Quanto já foi pago</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="fornecedor-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não pagou nada)" oninput="aplicarMascaraMoeda(this); fornecedorAtualizarBadge()">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Previsão de pagamento</label>
+                                    <input type="date" id="fornecedor-previsao-pagamento" class="form-input">
                                 </div>
                             </div>
-                            <div class="demanda-campo">
-                                <label>Previsão de pagamento</label>
-                                <input type="date" id="fornecedor-previsao-pagamento" class="form-input">
-                            </div>
+                            <div id="fornecedor-status-badge" class="status-pagamento-badge-modal"></div>
                         </div>
                         <div class="demanda-campo">
                             <label>Prazo de entrega</label>
@@ -10697,23 +10721,24 @@
                         </div>
 
                         <!-- Freelancer: a diária JÁ é o custo total do evento. -->
-                        <div id="equipe-item-freelancer-wrap">
+                        <div id="equipe-item-freelancer-wrap" class="demanda-subgrupo">
                             <div class="demanda-campo-linha">
                                 <div class="demanda-campo">
                                     <label>Valor/diária</label>
                                     <div class="input-moeda-wrap">
                                         <span class="input-moeda-prefixo">R$</span>
-                                        <input type="text" id="equipe-item-valor" class="form-input" placeholder="0,00 (deixe vazio se não for pago por aqui)" oninput="aplicarMascaraMoeda(this)">
+                                        <input type="text" id="equipe-item-valor" class="form-input" placeholder="0,00 (deixe vazio se não for pago por aqui)" oninput="aplicarMascaraMoeda(this); equipeItemAtualizarBadge()">
                                     </div>
                                 </div>
                                 <div class="demanda-campo">
                                     <label>Quanto já foi pago</label>
                                     <div class="input-moeda-wrap">
                                         <span class="input-moeda-prefixo">R$</span>
-                                        <input type="text" id="equipe-item-valor-pago" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                        <input type="text" id="equipe-item-valor-pago" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); equipeItemAtualizarBadge()">
                                     </div>
                                 </div>
                             </div>
+                            <div id="equipe-item-status-badge" class="status-pagamento-badge-modal"></div>
                             <div class="demanda-campo">
                                 <label>Previsão de pagamento</label>
                                 <input type="date" id="equipe-item-previsao-pagamento" class="form-input">
@@ -10722,7 +10747,7 @@
 
                         <!-- Registrado(a): só gera custo extra se sair do horário normal
                              de trabalho — o salário fixo já cobre o resto. -->
-                        <div class="hidden" id="equipe-item-registrado-wrap">
+                        <div class="hidden demanda-subgrupo" id="equipe-item-registrado-wrap">
                             <div class="demanda-campo">
                                 <label>Esse evento está dentro do horário normal de trabalho dela?</label>
                                 <select id="equipe-item-dentro-horario-normal" class="form-input" onchange="equipeItemAtualizarCampos()">
@@ -10730,23 +10755,24 @@
                                     <option value="nao">Não — teve hora extra</option>
                                 </select>
                             </div>
-                            <div class="hidden" id="equipe-item-hora-extra-wrap">
+                            <div class="hidden demanda-subgrupo" id="equipe-item-hora-extra-wrap" style="border-top:none; padding-top:0;">
                                 <div class="demanda-campo-linha">
                                     <div class="demanda-campo">
                                         <label>Custo da hora extra pra esse evento</label>
                                         <div class="input-moeda-wrap">
                                             <span class="input-moeda-prefixo">R$</span>
-                                            <input type="text" id="equipe-item-valor-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                            <input type="text" id="equipe-item-valor-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); equipeItemAtualizarBadge()">
                                         </div>
                                     </div>
                                     <div class="demanda-campo">
                                         <label>Quanto já foi pago</label>
                                         <div class="input-moeda-wrap">
                                             <span class="input-moeda-prefixo">R$</span>
-                                            <input type="text" id="equipe-item-valor-pago-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                            <input type="text" id="equipe-item-valor-pago-registrado" class="form-input" placeholder="0,00" oninput="aplicarMascaraMoeda(this); equipeItemAtualizarBadge()">
                                         </div>
                                     </div>
                                 </div>
+                                <div id="equipe-item-status-badge-registrado" class="status-pagamento-badge-modal"></div>
                                 <div class="demanda-campo">
                                     <label>Previsão de pagamento</label>
                                     <input type="date" id="equipe-item-previsao-pagamento-registrado" class="form-input">
@@ -10887,38 +10913,41 @@
                                 <input type="text" id="patrocinio-nivel-outro" class="form-input hidden" placeholder="Digite o nível" style="margin-top:8px;">
                             </div>
                         </div>
-                        <div class="demanda-campo-linha">
-                            <div class="demanda-campo">
-                                <label>Valor em dinheiro</label>
-                                <div class="input-moeda-wrap">
-                                    <span class="input-moeda-prefixo">R$</span>
-                                    <input type="text" id="patrocinio-valor-dinheiro" class="form-input" placeholder="0,00 (deixe vazio se for só permuta)" oninput="aplicarMascaraMoeda(this)">
+                        <div class="demanda-subgrupo">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Valor em dinheiro</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="patrocinio-valor-dinheiro" class="form-input" placeholder="0,00 (deixe vazio se for só permuta)" oninput="aplicarMascaraMoeda(this); patrocinioAtualizarBadge()">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Forma de pagamento</label>
+                                    <select id="patrocinio-forma-pagamento" class="form-input">
+                                        <option value="pix">PIX</option>
+                                        <option value="boleto">Boleto</option>
+                                        <option value="cartao_credito">Cartão de crédito</option>
+                                        <option value="cartao_debito">Cartão de débito</option>
+                                        <option value="dinheiro">Dinheiro</option>
+                                        <option value="transferencia">Transferência</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="demanda-campo">
-                                <label>Forma de pagamento</label>
-                                <select id="patrocinio-forma-pagamento" class="form-input">
-                                    <option value="pix">PIX</option>
-                                    <option value="boleto">Boleto</option>
-                                    <option value="cartao_credito">Cartão de crédito</option>
-                                    <option value="cartao_debito">Cartão de débito</option>
-                                    <option value="dinheiro">Dinheiro</option>
-                                    <option value="transferencia">Transferência</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="demanda-campo-linha">
-                            <div class="demanda-campo">
-                                <label>Quanto já foi recebido (parte em dinheiro)</label>
-                                <div class="input-moeda-wrap">
-                                    <span class="input-moeda-prefixo">R$</span>
-                                    <input type="text" id="patrocinio-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não recebeu nada)" oninput="aplicarMascaraMoeda(this)">
+                            <div class="demanda-campo-linha">
+                                <div class="demanda-campo">
+                                    <label>Quanto já foi recebido (parte em dinheiro)</label>
+                                    <div class="input-moeda-wrap">
+                                        <span class="input-moeda-prefixo">R$</span>
+                                        <input type="text" id="patrocinio-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não recebeu nada)" oninput="aplicarMascaraMoeda(this); patrocinioAtualizarBadge()">
+                                    </div>
+                                </div>
+                                <div class="demanda-campo">
+                                    <label>Previsão de pagamento</label>
+                                    <input type="date" id="patrocinio-previsao-pagamento" class="form-input">
                                 </div>
                             </div>
-                            <div class="demanda-campo">
-                                <label>Previsão de pagamento</label>
-                                <input type="date" id="patrocinio-previsao-pagamento" class="form-input">
-                            </div>
+                            <div id="patrocinio-status-badge" class="status-pagamento-badge-modal"></div>
                         </div>
                         <div class="demanda-campo">
                             <label>Permuta (o que é oferecido em vez de dinheiro, se houver)</label>
@@ -11013,7 +11042,7 @@
 
                         <!-- Campos exclusivos de custo (produto/serviço comprado) — não
                              aparecem quando o lançamento é uma receita. -->
-                        <div id="lancamento-custo-detalhes" class="hidden">
+                        <div id="lancamento-custo-detalhes" class="hidden demanda-subgrupo" style="border-top:none; padding-top:0;">
                             <div class="demanda-campo-linha">
                                 <div class="demanda-campo">
                                     <label>É produto ou serviço?</label>
@@ -11069,7 +11098,7 @@
                                 <label>Valor <span class="campo-obrigatorio">*</span></label>
                                 <div class="input-moeda-wrap">
                                     <span class="input-moeda-prefixo">R$</span>
-                                    <input type="text" id="lancamento-valor" class="input-obrigatorio" placeholder="0,00" oninput="aplicarMascaraMoeda(this)">
+                                    <input type="text" id="lancamento-valor" class="input-obrigatorio" placeholder="0,00" oninput="aplicarMascaraMoeda(this); lancamentoAtualizarBadge()">
                                 </div>
                             </div>
                             <div class="demanda-campo">
@@ -11078,7 +11107,7 @@
                             </div>
                         </div>
 
-                        <div id="lancamento-custo-detalhes-2" class="hidden">
+                        <div id="lancamento-custo-detalhes-2" class="hidden demanda-subgrupo">
                             <div class="demanda-campo">
                                 <label>Forma de pagamento</label>
                                 <select id="lancamento-forma-pagamento" class="form-input">
@@ -11095,7 +11124,7 @@
                                     <label>Quanto já foi pago</label>
                                     <div class="input-moeda-wrap">
                                         <span class="input-moeda-prefixo">R$</span>
-                                        <input type="text" id="lancamento-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não pagou nada)" oninput="aplicarMascaraMoeda(this)">
+                                        <input type="text" id="lancamento-valor-pago" class="form-input" placeholder="0,00 (deixe vazio se ainda não pagou nada)" oninput="aplicarMascaraMoeda(this); lancamentoAtualizarBadge()">
                                     </div>
                                 </div>
                                 <div class="demanda-campo">
@@ -11103,6 +11132,7 @@
                                     <input type="date" id="lancamento-previsao-pagamento" class="form-input">
                                 </div>
                             </div>
+                            <div id="lancamento-status-badge" class="status-pagamento-badge-modal"></div>
                             <div class="demanda-campo-linha">
                                 <div class="demanda-campo">
                                     <label id="lancamento-status-entrega-label">Status da entrega</label>
@@ -17464,6 +17494,7 @@
         document.getElementById('fornecedor-valor-pago').value = (f && f.valorPago) ? String(f.valorPago).replace('.', ',') : '';
         document.getElementById('fornecedor-previsao-pagamento').value = f ? (f.previsaoPagamento || '') : '';
         document.getElementById('fornecedor-prazo-entrega').value = f ? (f.prazoEntrega || '') : '';
+        fornecedorAtualizarBadge();
 
         const modal = document.getElementById('modal-fornecedor');
         modal.classList.remove('hidden');
@@ -17637,6 +17668,65 @@
         if (ehRegistrado) {
             const temHoraExtra = document.getElementById('equipe-item-dentro-horario-normal').value === 'nao';
             document.getElementById('equipe-item-hora-extra-wrap').classList.toggle('hidden', !temHoraExtra);
+        }
+        equipeItemAtualizarBadge();
+    }
+
+    // Mostra o status calculado (Pendente/Pago/Pago parcialmente) direto
+    // no modal, ao vivo, conforme a pessoa digita — sem precisar salvar e
+    // ir olhar na lista pra saber como ficou.
+    // Helper genérico: atualiza um badge de status ao vivo comparando dois
+    // campos de input (valor total e valor pago). Usado em todo modal que
+    // tem dinheiro envolvido.
+    function atualizarBadgeGenerico(badgeId, inputValorId, inputValorPagoId) {
+        const badge = document.getElementById(badgeId);
+        const valor = document.getElementById(inputValorId).value;
+        if (valor) {
+            const s = statusPagamentoInfo(valor, document.getElementById(inputValorPagoId).value);
+            badge.textContent = s.texto;
+            badge.style.background = s.cor.bg;
+            badge.style.color = s.cor.fg;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function fornecedorAtualizarBadge() {
+        atualizarBadgeGenerico('fornecedor-status-badge', 'fornecedor-valor', 'fornecedor-valor-pago');
+    }
+
+    function patrocinioAtualizarBadge() {
+        atualizarBadgeGenerico('patrocinio-status-badge', 'patrocinio-valor-dinheiro', 'patrocinio-valor-pago');
+    }
+
+    function lancamentoAtualizarBadge() {
+        atualizarBadgeGenerico('lancamento-status-badge', 'lancamento-valor', 'lancamento-valor-pago');
+    }
+
+    function equipeItemAtualizarBadge() {
+        const badgeFreela = document.getElementById('equipe-item-status-badge');
+        const valorFreela = document.getElementById('equipe-item-valor').value;
+        if (valorFreela) {
+            const s = statusPagamentoInfo(valorFreela, document.getElementById('equipe-item-valor-pago').value);
+            badgeFreela.textContent = s.texto;
+            badgeFreela.style.background = s.cor.bg;
+            badgeFreela.style.color = s.cor.fg;
+            badgeFreela.classList.remove('hidden');
+        } else {
+            badgeFreela.classList.add('hidden');
+        }
+
+        const badgeRegistrado = document.getElementById('equipe-item-status-badge-registrado');
+        const valorRegistrado = document.getElementById('equipe-item-valor-registrado').value;
+        if (valorRegistrado) {
+            const s = statusPagamentoInfo(valorRegistrado, document.getElementById('equipe-item-valor-pago-registrado').value);
+            badgeRegistrado.textContent = s.texto;
+            badgeRegistrado.style.background = s.cor.bg;
+            badgeRegistrado.style.color = s.cor.fg;
+            badgeRegistrado.classList.remove('hidden');
+        } else {
+            badgeRegistrado.classList.add('hidden');
         }
     }
 
@@ -17878,6 +17968,7 @@
         document.getElementById('patrocinio-forma-pagamento').value = p ? (p.formaPagamento || 'pix') : 'pix';
         document.getElementById('patrocinio-valor-pago').value = (p && p.valorPago) ? String(p.valorPago).replace('.', ',') : '';
         document.getElementById('patrocinio-previsao-pagamento').value = p ? (p.previsaoPagamento || '') : '';
+        patrocinioAtualizarBadge();
 
         document.querySelectorAll('.entregavel-check').forEach(chk => { chk.checked = false; });
         ['preEvento', 'duranteEvento', 'posEvento'].forEach(fase => {
@@ -18491,6 +18582,7 @@
         document.getElementById('lancamento-status-entrega').value = (l && l.statusEntrega) || 'pendente';
         document.getElementById('lancamento-previsao-pagamento').value = (l && l.previsaoPagamento) || '';
         document.getElementById('lancamento-previsao-entrega').value = (l && l.previsaoEntrega) || '';
+        lancamentoAtualizarBadge();
 
         // Recarrega a lista de fornecedores toda vez que abre (pode ter
         // mudado desde a última vez), depois marca o que já estava salvo.
