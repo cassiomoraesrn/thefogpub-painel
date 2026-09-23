@@ -9639,7 +9639,7 @@
 
             <!-- MARKETING -->
             <div id="marketing-page" class="page-content hidden">
-                <div class="content-header marketing-header">
+                <div class="content-header marketing-header" id="marketing-content-header">
                     <div>
                         <h1>Marketing</h1>
                         <p>Produção de conteúdo para eventos</p>
@@ -9654,7 +9654,7 @@
                 </div>
 
                 <!-- SUB-NAVEGAÇÃO DO MÓDULO MARKETING -->
-                <div class="marketing-tabs">
+                <div class="marketing-tabs" id="marketing-tabs-row">
                     <button type="button" class="marketing-tab active" data-view="kanban" onclick="marketingTrocarView('kanban', this)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="9"></rect>
@@ -9732,9 +9732,15 @@
 
                 <!-- VIEW: KANBAN (Produção) -->
                 <div id="marketing-view-kanban" class="marketing-view">
-                    <div id="kanban-contexto-evento-banner" class="hidden" style="display:flex; align-items:center; justify-content:space-between; background:var(--beige); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:14px;">
-                        <span style="font-size:13px; color:var(--warm-gray);">Mostrando só as tarefas de produção desse evento — as tarefas de marketing ficam separadas, no quadro "Dia a dia".</span>
-                        <button type="button" class="btn-cancelar-edicao" style="padding:6px 14px; font-size:12.5px;" onclick="voltarDoKanbanParaEvento()">← Voltar para o evento</button>
+                    <div id="kanban-contexto-evento-banner" class="hidden" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+                        <div>
+                            <button type="button" class="back-link" style="margin-bottom:6px;" onclick="voltarDoKanbanParaEvento()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                                Voltar para o evento
+                            </button>
+                            <h1 id="kanban-contexto-evento-titulo" style="margin:0;">Produção</h1>
+                            <p class="aparencia-bloco-sub" style="margin:2px 0 0;">Só as tarefas desse evento — as de marketing ficam separadas, no quadro "Dia a dia".</p>
+                        </div>
                     </div>
                     <div class="kanban-quadros-linha" id="kanban-quadros-linha">
                         <!-- Preenchido via JS: kanbanRenderQuadros() -->
@@ -10173,30 +10179,35 @@
 
             <!-- PÁGINA: GESTÃO DE UM EVENTO ESPECÍFICO -->
             <div id="evento-gestao-page" class="page-content hidden">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
-                    <button class="back-link" onclick="changePage('eventos', document.getElementById('menu-item-eventos'))">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="19" y1="12" x2="5" y2="12"></line>
-                            <polyline points="12 19 5 12 12 5"></polyline>
-                        </svg>
-                        Voltar para Eventos
-                    </button>
-                    <button type="button" class="btn-upload" id="evento-gestao-btn-kanban" onclick="abrirQuadroDoEventoGerenciado()">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18"></rect><rect x="14" y="3" width="7" height="10"></rect></svg>
-                        Ver quadro no Kanban
-                    </button>
-                    <button type="button" class="btn-upload" onclick="abrirPaginaPublicaEmNovaAba()">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Ver página pública
-                    </button>
-                    <button type="button" class="btn-excluir" onclick="excluirEventoGerenciado(eventoGestaoAtualId)">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        Excluir evento
-                    </button>
-                </div>
+                <button class="back-link" onclick="changePage('eventos', document.getElementById('menu-item-eventos'))" style="margin-bottom:16px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    Voltar para Eventos
+                </button>
 
-                <h1 id="evento-gestao-nome" style="margin:0 0 4px;">—</h1>
-                <p class="aparencia-bloco-sub" id="evento-gestao-data" style="margin-bottom:16px;">—</p>
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+                    <div>
+                        <h1 id="evento-gestao-nome" style="margin:0 0 4px;">—</h1>
+                        <p class="aparencia-bloco-sub" id="evento-gestao-data" style="margin:0;">—</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <button type="button" class="btn-upload" id="evento-gestao-btn-kanban" onclick="abrirQuadroDoEventoGerenciado()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18"></rect><rect x="14" y="3" width="7" height="10"></rect></svg>
+                            Ver quadro no Kanban
+                        </button>
+                        <button type="button" class="btn-upload" onclick="abrirPaginaPublicaEmNovaAba()">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                            Ver página pública
+                        </button>
+                        <span style="width:1px; height:22px; background:var(--line); margin:0 4px;"></span>
+                        <button type="button" class="btn-excluir" onclick="excluirEventoGerenciado(eventoGestaoAtualId)">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            Excluir evento
+                        </button>
+                    </div>
+                </div>
 
                 <div style="display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap;">
                     <div id="evento-gestao-capa-preview" class="evento-gestao-capa-preview">
@@ -21073,6 +21084,20 @@
 
         const banner = document.getElementById('kanban-contexto-evento-banner');
         if (banner) banner.classList.toggle('hidden', !kanbanContextoEventoId);
+
+        // Some o cabeçalho e as outras abas do Marketing (Biblioteca de
+        // Mídia, Chat, Padrões, Calendário) quando está no contexto de um
+        // evento — senão continua parecendo que "entrou" no Marketing.
+        const cabecalhoMarketing = document.getElementById('marketing-content-header');
+        const abasMarketing = document.getElementById('marketing-tabs-row');
+        if (cabecalhoMarketing) cabecalhoMarketing.classList.toggle('hidden', !!kanbanContextoEventoId);
+        if (abasMarketing) abasMarketing.classList.toggle('hidden', !!kanbanContextoEventoId);
+
+        if (kanbanContextoEventoId) {
+            const evento = eventosGerenciados.find(e => e.id === kanbanContextoEventoId);
+            const titulo = document.getElementById('kanban-contexto-evento-titulo');
+            if (titulo && evento) titulo.textContent = 'Produção — ' + eventoNomeExibicao(evento);
+        }
 
         // Dentro de um evento: só existe UM quadro relevante — o dele. Fora
         // disso (marketing "normal"): nunca mostra quadros de evento, pra
