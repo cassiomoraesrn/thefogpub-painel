@@ -8787,7 +8787,7 @@
                     </div>
                     Eventos
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-marketing" title="Marketing" onclick="changePage('marketing', this)">
+                <button class="menu-item menu-subitem" id="menu-item-marketing" title="Marketing" onclick="abrirMarketingDoMenu(this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 4v6h6"></path>
@@ -9732,6 +9732,10 @@
 
                 <!-- VIEW: KANBAN (Produção) -->
                 <div id="marketing-view-kanban" class="marketing-view">
+                    <div id="kanban-contexto-evento-banner" class="hidden" style="display:flex; align-items:center; justify-content:space-between; background:var(--beige); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin-bottom:14px;">
+                        <span style="font-size:13px; color:var(--warm-gray);">Mostrando só as tarefas de produção desse evento — as tarefas de marketing ficam separadas, no quadro "Dia a dia".</span>
+                        <button type="button" class="btn-cancelar-edicao" style="padding:6px 14px; font-size:12.5px;" onclick="voltarDoKanbanParaEvento()">← Voltar para o evento</button>
+                    </div>
                     <div class="kanban-quadros-linha" id="kanban-quadros-linha">
                         <!-- Preenchido via JS: kanbanRenderQuadros() -->
                     </div>
@@ -11843,17 +11847,10 @@
                         </button>
                     </div>
                     <div class="demanda-modal-corpo">
-                        <p class="aparencia-bloco-sub">Um quadro separa as tarefas em outra visão — útil pra um evento grande, ou qualquer outro assunto que você queira organizar à parte do dia a dia.</p>
+                        <p class="aparencia-bloco-sub">Um quadro separa as tarefas em outra visão — útil pra organizar um assunto à parte do dia a dia do marketing (campanhas grandes, projetos específicos...). Eventos já ganham o quadro de produção deles automaticamente, sem precisar criar aqui.</p>
                         <div class="demanda-campo">
                             <label>Nome do quadro <span class="campo-obrigatorio">*</span></label>
-                            <input type="text" id="novo-quadro-nome" class="input-obrigatorio" placeholder="Ex: Aniversário de 5 anos, Festival de Inverno...">
-                        </div>
-                        <div class="demanda-campo">
-                            <label>Vincular a um evento (opcional)</label>
-                            <select id="novo-quadro-evento" class="form-input">
-                                <option value="">Nenhum evento específico</option>
-                            </select>
-                            <p class="aparencia-bloco-sub" style="margin-top:4px;">Isso é só uma referência — não move tarefas automaticamente.</p>
+                            <input type="text" id="novo-quadro-nome" class="input-obrigatorio" placeholder="Ex: Campanha de fim de ano, Rebranding...">
                         </div>
                     </div>
                     <div class="modal-evento-footer">
@@ -19629,9 +19626,15 @@
         }, 'Excluir');
     }
 
+    function abrirMarketingDoMenu(el) {
+        kanbanContextoEventoId = null;
+        changePage('marketing', el);
+    }
+
     function abrirQuadroDoEventoGerenciado() {
         const evento = eventosGerenciados.find(e => e.id === eventoGestaoAtualId);
         if (!evento || !evento.quadroKanbanId) return;
+        kanbanContextoEventoId = evento.id;
         kanbanQuadroAtual = evento.quadroKanbanId;
         changePage('marketing', document.getElementById('menu-item-marketing'));
         marketingTrocarView('kanban', document.querySelector('.marketing-tab[data-view="kanban"]'));
@@ -21043,6 +21046,10 @@
     }
 
     let kanbanQuadroAtual = 'dia-a-dia';
+    // Quando não-nulo, o Kanban está "dentro" da gestão de um evento — só
+    // mostra o quadro desse evento, sem misturar com marketing nem com
+    // outros eventos. Voltou a ser null assim que sai desse contexto.
+    let kanbanContextoEventoId = null;
 
     async function salvarQuadrosKanbanStorage() {
         await sincronizarTodosQuadros();
@@ -21053,11 +21060,28 @@
         kanbanRender();
     }
 
+    function voltarDoKanbanParaEvento() {
+        const eventoId = kanbanContextoEventoId;
+        kanbanContextoEventoId = null;
+        kanbanQuadroAtual = 'dia-a-dia';
+        if (eventoId) abrirEventoGestao(eventoId);
+    }
+
     function kanbanRenderQuadros() {
         const container = document.getElementById('kanban-quadros-linha');
         if (!container) return;
 
-        const tabs = quadrosKanban.map(q => {
+        const banner = document.getElementById('kanban-contexto-evento-banner');
+        if (banner) banner.classList.toggle('hidden', !kanbanContextoEventoId);
+
+        // Dentro de um evento: só existe UM quadro relevante — o dele. Fora
+        // disso (marketing "normal"): nunca mostra quadros de evento, pra
+        // não misturar tarefa de cotação/equipe com tarefa de marketing.
+        const quadrosVisiveis = kanbanContextoEventoId
+            ? quadrosKanban.filter(q => q.eventoId === kanbanContextoEventoId)
+            : quadrosKanban.filter(q => !q.eventoId);
+
+        const tabs = quadrosVisiveis.map(q => {
             const qtdParaMim = demandas.filter(d =>
                 (d.quadroId || 'dia-a-dia') === q.id &&
                 !d.arquivada &&
@@ -21071,23 +21095,15 @@
                 </button>`;
         }).join('');
 
-        container.innerHTML = tabs + `
+        container.innerHTML = tabs + (kanbanContextoEventoId ? '' : `
             <button type="button" class="kanban-quadro-nova-btn" onclick="abrirModalNovoQuadro()">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Novo quadro
-            </button>`;
+            </button>`);
     }
 
     function abrirModalNovoQuadro() {
         document.getElementById('novo-quadro-nome').value = '';
-        const selectEvento = document.getElementById('novo-quadro-evento');
-        selectEvento.innerHTML = '<option value="">Nenhum evento específico</option>' +
-            eventos.slice().sort((a, b) => a.data.localeCompare(b.data)).map(e => {
-                const [ano, mes, dia] = e.data.split('-');
-                const nome = e.nomeEvento || e.bandas.map(b => nomeBandaPorId(b.bandaId)).join(' + ');
-                return `<option value="${e.id}">${dia}/${mes} — ${nome}</option>`;
-            }).join('');
-
         const modal = document.getElementById('modal-novo-quadro');
         modal.classList.remove('hidden');
         modal.classList.add('active');
@@ -21106,9 +21122,8 @@
             alert('Dá um nome pro quadro.');
             return;
         }
-        const eventoId = document.getElementById('novo-quadro-evento').value || null;
         const novoId = 'quadro_' + Date.now();
-        quadrosKanban.push({ id: novoId, nome, eventoId, protegido: false });
+        quadrosKanban.push({ id: novoId, nome, eventoId: null, protegido: false });
         salvarQuadrosKanbanStorage();
         fecharModalNovoQuadro();
         kanbanQuadroAtual = novoId;
@@ -21360,9 +21375,15 @@
     function popularSelectQuadrosDemanda(quadroSelecionado) {
         const select = document.getElementById('demanda-form-quadro');
         if (!select) return;
-        select.innerHTML = quadrosKanban.map(q =>
+        // Mesma regra das abas: dentro de um evento, só o quadro dele;
+        // fora disso, nunca mistura com quadro de evento nenhum.
+        const opcoes = kanbanContextoEventoId
+            ? quadrosKanban.filter(q => q.eventoId === kanbanContextoEventoId)
+            : quadrosKanban.filter(q => !q.eventoId);
+        select.innerHTML = opcoes.map(q =>
             `<option value="${q.id}" ${q.id === quadroSelecionado ? 'selected' : ''}>${q.nome}</option>`
         ).join('');
+        select.disabled = !!kanbanContextoEventoId;
     }
 
     function abrirFormDemanda() {
