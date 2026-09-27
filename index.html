@@ -947,6 +947,17 @@
             position: relative;
         }
 
+        /* Itens "em implantação" — mesma estrutura do menu normal, mas com
+           uma pista visual sutil de que ainda não é prioridade/produção. */
+        .menu-item-em-implantacao {
+            opacity: 0.78;
+            border-left: 2px dashed rgba(201, 168, 118, 0.4);
+        }
+        .menu-item-em-implantacao:hover,
+        .menu-item-em-implantacao.active {
+            opacity: 1;
+        }
+
         .sidebar-menu > .menu-section-header:first-child {
             margin-top: 6px;
         }
@@ -8779,13 +8790,13 @@
                     </div>
                     Bandas
                 </button>
-                <button class="menu-item menu-subitem" id="menu-item-eventos" title="Eventos" onclick="changePage('eventos', this)">
+                <button class="menu-item menu-subitem" id="menu-item-eventos" title="Agenda" onclick="abrirAgendaDoMenu(this)">
                     <div class="menu-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 2l2.4 7.2H22l-6 4.6 2.3 7.2-6.3-4.6-6.3 4.6 2.3-7.2-6-4.6h7.6z"></path>
                         </svg>
                     </div>
-                    Eventos
+                    Agenda
                 </button>
                 <button class="menu-item menu-subitem" id="menu-item-marketing" title="Marketing" onclick="abrirMarketingDoMenu(this)">
                     <div class="menu-icon">
@@ -8809,6 +8820,22 @@
                         </svg>
                     </div>
                     Clientes
+                </button>
+
+                <!-- SEÇÃO: EM IMPLANTAÇÃO — funcionalidades já existentes no sistema,
+                     mas que o Cássio ainda não colocou em uso com o cliente. Fica à
+                     parte pra não misturar com o que já está em produção de verdade. -->
+                <div class="menu-section-header" style="display:flex; align-items:center; gap:6px;">
+                    Em implantação
+                    <span title="Ainda em teste — não é prioridade agora" style="cursor:help; opacity:0.7;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    </span>
+                </div>
+                <button class="menu-item menu-subitem menu-item-em-implantacao" id="menu-item-gestao-eventos" title="Gestão de Eventos e Ingressos" onclick="abrirGestaoEventosDoMenu(this)">
+                    <div class="menu-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.3 6.9.9-5 4.9 1.2 6.9-6-3.2-6 3.2 1.2-6.9-5-4.9 6.9-.9L12 2z"></path></svg>
+                    </div>
+                    Gestão de Eventos e Ingressos
                 </button>
 
                 <!-- SEÇÃO: MINHA CONTA -->
@@ -10022,16 +10049,16 @@
             <!-- PÁGINA: LISTA DE EVENTOS GERENCIADOS -->
             <div id="eventos-page" class="page-content hidden">
                 <div class="content-header">
-                    <h1>Eventos</h1>
-                    <p>Agenda do dia a dia e a gestão completa dos eventos grandes, tudo num só lugar</p>
+                    <h1 id="eventos-page-titulo">Agenda</h1>
+                    <p id="eventos-page-subtitulo">Organize os shows e datas de conteúdo do dia a dia</p>
                 </div>
 
-                <div class="marketing-tabs">
-                    <button type="button" class="eventos-tab-principal active" onclick="eventosTrocarAbaPrincipal('calendario', this)">
+                <div class="marketing-tabs hidden" id="eventos-tabs-internas">
+                    <button type="button" class="eventos-tab-principal active" id="eventos-tab-btn-calendario" onclick="eventosTrocarAbaPrincipal('calendario', this)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                         <span>Calendário</span>
                     </button>
-                    <button type="button" class="eventos-tab-principal" onclick="eventosTrocarAbaPrincipal('gestao', this)">
+                    <button type="button" class="eventos-tab-principal" id="eventos-tab-btn-gestao" onclick="eventosTrocarAbaPrincipal('gestao', this)">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.3 6.9.9-5 4.9 1.2 6.9-6-3.2-6 3.2 1.2-6.9-5-4.9 6.9-.9L12 2z"></path></svg>
                         <span>Gestão completa</span>
                     </button>
@@ -10179,7 +10206,7 @@
 
             <!-- PÁGINA: GESTÃO DE UM EVENTO ESPECÍFICO -->
             <div id="evento-gestao-page" class="page-content hidden">
-                <button class="back-link" onclick="changePage('eventos', document.getElementById('menu-item-eventos'))" style="margin-bottom:16px;">
+                <button class="back-link" onclick="abrirGestaoEventosDoMenu(document.getElementById('menu-item-gestao-eventos'))" style="margin-bottom:16px;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="19" y1="12" x2="5" y2="12"></line>
                         <polyline points="12 19 5 12 12 5"></polyline>
@@ -15930,6 +15957,7 @@
             'menu-item-bandas': 'verBandas',
             'menu-item-agenda': 'verAgenda',
             'menu-item-eventos': 'verEventos',
+            'menu-item-gestao-eventos': 'verEventos',
             'menu-item-marketing': 'verMarketing',
             'menu-item-meus-dados': 'verMeusDados',
             'menu-item-clientes': 'verClientes',
@@ -17004,6 +17032,24 @@
     let eventoGestaoAtualId = null;
     let eventoGestaoAbaAtual = 'programacao';
 
+    // Agenda (prioridade atual) e Gestão de Eventos (em implantação) usam a
+    // mesma página por baixo dos panos, mas agora têm portas de entrada
+    // próprias no menu — o alternador interno fica escondido, porque cada
+    // uma já sabe pra qual visão ir.
+    function abrirAgendaDoMenu(el) {
+        changePage('eventos', el);
+        document.getElementById('eventos-page-titulo').textContent = 'Agenda';
+        document.getElementById('eventos-page-subtitulo').textContent = 'Organize os shows e datas de conteúdo do dia a dia';
+        eventosTrocarAbaPrincipal('calendario', document.getElementById('eventos-tab-btn-calendario'));
+    }
+
+    function abrirGestaoEventosDoMenu(el) {
+        changePage('eventos', el);
+        document.getElementById('eventos-page-titulo').textContent = 'Gestão de Eventos e Ingressos';
+        document.getElementById('eventos-page-subtitulo').textContent = 'Produção completa de eventos grandes — programação, financeiro, ingressos e mais';
+        eventosTrocarAbaPrincipal('gestao', document.getElementById('eventos-tab-btn-gestao'));
+    }
+
     function eventosTrocarAbaPrincipal(view, btn) {
         document.querySelectorAll('#eventos-page > .marketing-tabs .eventos-tab-principal').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
@@ -17083,7 +17129,7 @@
                 // Se a exclusão veio de dentro da própria página de gestão
                 // desse evento, não faz sentido ficar nela — volta pra lista.
                 if (!document.getElementById('evento-gestao-page').classList.contains('hidden')) {
-                    changePage('eventos', document.getElementById('menu-item-eventos'));
+                    abrirGestaoEventosDoMenu(document.getElementById('menu-item-gestao-eventos'));
                 }
             },
             'Excluir'
@@ -20249,10 +20295,12 @@
     function voltarParaAgenda() {
         document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
         document.getElementById('eventos-page').classList.remove('hidden');
+        document.getElementById('eventos-page-titulo').textContent = 'Agenda';
+        document.getElementById('eventos-page-subtitulo').textContent = 'Organize os shows e datas de conteúdo do dia a dia';
         // Garante que a aba Calendário (não Gestão completa) fique ativa,
         // já que "voltar da tela de detalhe do evento" é sempre voltando
         // pro calendário, de onde esse evento foi aberto.
-        const btnCalendario = document.querySelector('#eventos-page .eventos-tab-principal');
+        const btnCalendario = document.getElementById('eventos-tab-btn-calendario');
         if (btnCalendario) eventosTrocarAbaPrincipal('calendario', btnCalendario);
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         const menuEventos = document.getElementById('menu-item-eventos');
@@ -24846,7 +24894,7 @@
             const [ano, mes, dia] = e.data.split('-');
             const lucro = eventoCalcularLucro(e);
             return `
-                <div class="cliente-fase2-item" style="cursor:pointer; min-width:180px;" onclick="changePage('eventos', document.getElementById('menu-item-eventos')); abrirEventoGestao('${e.id}')">
+                <div class="cliente-fase2-item" style="cursor:pointer; min-width:180px;" onclick="abrirGestaoEventosDoMenu(document.getElementById('menu-item-gestao-eventos')); abrirEventoGestao('${e.id}')">
                     <span class="cliente-fase2-label">${dia}/${mes} — ${eventoNomeExibicao(e)}</span>
                     <span class="cliente-fase2-valor" style="font-size:15px;">${temPermissao('verFinanceiroEvento') ? formatarMoeda(lucro) : (e.programacao || []).length + ' na programação'}</span>
                 </div>`;
