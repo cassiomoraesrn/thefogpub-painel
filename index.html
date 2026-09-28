@@ -8430,7 +8430,7 @@
                     <p>Cadastro de banda para tocar na casa</p>
                 </div>
 
-                <p class="cadastro-publico-intro">
+                <p class="cadastro-publico-intro" id="cadpub-intro">
                     Preencha os dados abaixo para enviar o cadastro da sua banda.
                     Após o envio, o pedido entra em análise e você será avisado sobre o resultado.
                 </p>
@@ -8476,6 +8476,52 @@
                     <textarea id="cadpub-descricao" class="form-input" rows="4" placeholder="Conte um pouco sobre a banda, tempo de estrada, repertório..."></textarea>
                 </div>
 
+                <!-- Só aparece no link pré-aprovado: foto e logotipo já no cadastro -->
+                <div id="cadpub-midia-bloco" class="hidden">
+                    <div class="form-row">
+                        <label class="form-label">Foto de perfil da banda (opcional)</label>
+                        <div class="identidade-upload-box identidade-preview-claro identidade-avatar-box">
+                            <div class="identidade-upload-empty" id="cadpub-foto-empty">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="8" r="4"></circle>
+                                    <path d="M4 20c0-4 3.5-6 8-6s8 2 8 6"></path>
+                                </svg>
+                                <span class="upload-hint">PNG/JPG · até 500 KB</span>
+                                <button class="btn-upload" type="button" onclick="document.getElementById('cadpub-foto-input').click()">Enviar arquivo</button>
+                            </div>
+                            <div class="identidade-upload-filled hidden" id="cadpub-foto-filled">
+                                <img id="cadpub-foto-preview" class="identidade-img-preview identidade-img-avatar" src="" alt="Foto da banda">
+                                <div class="file-action-btns">
+                                    <button class="btn-file-action" type="button" onclick="document.getElementById('cadpub-foto-input').click()">Alterar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="cadpub-foto-input" accept="image/png,image/jpeg" style="display:none" onchange="cadpubMidiaSelecionada('foto', this)">
+                    </div>
+
+                    <div class="form-row">
+                        <label class="form-label">Logotipo da banda (opcional)</label>
+                        <div class="identidade-upload-box identidade-preview-claro">
+                            <div class="identidade-upload-empty" id="cadpub-logo-empty">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <path d="M21 15l-5-5L5 21"></path>
+                                </svg>
+                                <span class="upload-hint">PNG/JPG · até 500 KB</span>
+                                <button class="btn-upload" type="button" onclick="document.getElementById('cadpub-logo-input').click()">Enviar arquivo</button>
+                            </div>
+                            <div class="identidade-upload-filled hidden" id="cadpub-logo-filled">
+                                <img id="cadpub-logo-preview" class="identidade-img-preview" src="" alt="Logotipo da banda">
+                                <div class="file-action-btns">
+                                    <button class="btn-file-action" type="button" onclick="document.getElementById('cadpub-logo-input').click()">Alterar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" id="cadpub-logo-input" accept="image/png,image/jpeg" style="display:none" onchange="cadpubMidiaSelecionada('logo', this)">
+                    </div>
+                </div>
+
                 <p id="cadpub-erro" class="cadastro-publico-erro hidden"></p>
 
                 <button class="login-button" onclick="enviarCadastroPublicoBanda()">Enviar cadastro</button>
@@ -8487,8 +8533,19 @@
                     <circle cx="12" cy="12" r="10"></circle>
                     <path d="M8 12l2.5 2.5L16 9"></path>
                 </svg>
-                <h2>Cadastro enviado!</h2>
-                <p>Recebemos os dados da sua banda. O responsável pela casa vai analisar e entrar em contato em breve.</p>
+                <h2 id="cadpub-sucesso-titulo">Cadastro enviado!</h2>
+                <p id="cadpub-sucesso-texto">Recebemos os dados da sua banda. O responsável pela casa vai analisar e entrar em contato em breve.</p>
+            </div>
+
+            <!-- ESTADO: LINK PRÉ-APROVADO INVÁLIDO OU SUBSTITUÍDO -->
+            <div id="cadastro-publico-link-invalido" class="cadastro-publico-sucesso hidden">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h2>Link não está mais válido</h2>
+                <p>Esse link de cadastro expirou ou foi substituído. Peça um link novo ao responsável pela casa.</p>
             </div>
 
         </div>
@@ -9001,7 +9058,7 @@
                 </div>
 
                 <!-- ÁREA DE LINK PÚBLICO — só visível para o Proprietário -->
-                <div class="bandas-link-publico hidden" id="bandas-link-publico-box">
+                <div class="bandas-link-publico hidden" id="bandas-link-publico-box" style="margin-bottom:12px;">
                     <div class="bandas-link-publico-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
@@ -9015,6 +9072,26 @@
                     <div class="bandas-link-publico-campo">
                         <input type="text" class="bandas-link-publico-input" id="bandas-link-publico-input" readonly onclick="this.select();">
                         <button class="btn-copiar-link" id="bandas-link-publico-btn-copiar" onclick="copiarLinkCadastroBanda()">Copiar link</button>
+                    </div>
+                </div>
+
+                <!-- LINK PRÉ-APROVADO — pra bandas que o proprietário já conhece e
+                     aprovou por fora. O cadastro entra direto como "Aprovada". -->
+                <div class="bandas-link-publico hidden" id="bandas-link-preaprovado-box">
+                    <div class="bandas-link-publico-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                            <path d="M9 12l2 2 4-4"></path>
+                        </svg>
+                    </div>
+                    <div class="bandas-link-publico-texto">
+                        <div class="bandas-link-publico-titulo">Link de cadastro pré-aprovado</div>
+                        <div class="bandas-link-publico-sub">Para bandas que você já conhece e aprovou. O cadastro entra direto como "Aprovada", sem passar pela análise.</div>
+                    </div>
+                    <div class="bandas-link-publico-campo">
+                        <input type="text" class="bandas-link-publico-input hidden" id="bandas-link-preaprovado-input" readonly onclick="this.select();">
+                        <button class="btn-copiar-link hidden" id="bandas-link-preaprovado-btn-copiar" onclick="copiarLinkPreAprovado()">Copiar link</button>
+                        <button class="btn-upload" id="bandas-link-preaprovado-btn-gerar" onclick="bandasGerarLinkPreAprovado()">Gerar link</button>
                     </div>
                 </div>
 
@@ -13755,6 +13832,16 @@
             }
         }
 
+        // Cartão do link pré-aprovado — mesma regra: só o Proprietário.
+        const linkPreBox = document.getElementById('bandas-link-preaprovado-box');
+        if (linkPreBox) {
+            linkPreBox.classList.toggle('hidden', !souProprietario);
+            if (souProprietario) {
+                if (linkPreAprovadoCarregado) bandasRenderLinkPreAprovado();
+                else bandasCarregarLinkPreAprovado();
+            }
+        }
+
         // Só quem tem a permissão de aprovar bandas (Proprietário ou quem
         // ele delegou) enxerga as abas "Em Análise" e "Reprovadas". Os
         // demais só veem a lista de aprovadas, sem abas.
@@ -13841,6 +13928,109 @@
 
     function gerarLinkCadastroBanda() {
         return location.origin + location.pathname + '#cadastro-banda';
+    }
+
+    // =====================================================
+    //  LINK DE CADASTRO PRÉ-APROVADO
+    //  Diferente do link normal (que cai em "Em Análise"), esse já cria
+    //  a banda como "Aprovada". Como um link fixo e previsível deixaria
+    //  qualquer um se auto-aprovar, ele carrega um token aleatório
+    //  guardado no app_config — e "Gerar novo link" troca o token, o que
+    //  invalida na hora qualquer link anterior que tenha vazado.
+    // =====================================================
+    const CHAVE_LINK_PRE_APROVADO = 'link_cadastro_banda_aprovada';
+    let linkPreAprovadoToken = null;
+    let linkPreAprovadoCarregado = false;
+    let linkPreAprovadoCarregando = false;
+
+    function gerarTokenCadastro() {
+        const bytes = new Uint8Array(24);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function gerarLinkCadastroPreAprovado(token) {
+        return location.origin + location.pathname + '#cadastro-banda-aprovada=' + token;
+    }
+
+    async function lerTokenCadastroPreAprovado() {
+        const { data, error } = await supabaseClient
+            .from('app_config').select('valor').eq('chave', CHAVE_LINK_PRE_APROVADO).maybeSingle();
+        if (error) return { erro: true, token: null };
+        return { erro: false, token: (data && data.valor && data.valor.token) || null };
+    }
+
+    async function bandasCarregarLinkPreAprovado() {
+        if (!supabaseClient || linkPreAprovadoCarregando) return;
+        linkPreAprovadoCarregando = true;
+        const resultado = await lerTokenCadastroPreAprovado();
+        linkPreAprovadoCarregando = false;
+        if (resultado.erro) return; // não marca como carregado: tenta de novo no próximo render
+        linkPreAprovadoToken = resultado.token;
+        linkPreAprovadoCarregado = true;
+        bandasRenderLinkPreAprovado();
+    }
+
+    function bandasRenderLinkPreAprovado() {
+        const input = document.getElementById('bandas-link-preaprovado-input');
+        const btnCopiar = document.getElementById('bandas-link-preaprovado-btn-copiar');
+        const btnGerar = document.getElementById('bandas-link-preaprovado-btn-gerar');
+        if (!input || !btnCopiar || !btnGerar) return;
+
+        const temLink = !!linkPreAprovadoToken;
+        input.value = temLink ? gerarLinkCadastroPreAprovado(linkPreAprovadoToken) : '';
+        input.classList.toggle('hidden', !temLink);
+        btnCopiar.classList.toggle('hidden', !temLink);
+        btnGerar.textContent = temLink ? 'Gerar novo link' : 'Gerar link';
+    }
+
+    async function bandasGerarLinkPreAprovado() {
+        const gerar = async () => {
+            const token = gerarTokenCadastro();
+            const { error } = await supabaseClient.from('app_config').upsert({
+                chave: CHAVE_LINK_PRE_APROVADO,
+                valor: { token, criadoEm: new Date().toISOString() },
+                atualizado_em: new Date().toISOString()
+            });
+            if (error) {
+                alert('Não consegui gerar o link agora. Tente de novo em instantes.');
+                return;
+            }
+            linkPreAprovadoToken = token;
+            linkPreAprovadoCarregado = true;
+            bandasRenderLinkPreAprovado();
+        };
+
+        if (linkPreAprovadoToken) {
+            customConfirm(
+                'Gerar um novo link?',
+                'O link atual deixa de funcionar na hora. Quem ainda não concluiu o cadastro por ele vai precisar do link novo.',
+                gerar,
+                'Gerar novo link'
+            );
+        } else {
+            await gerar();
+        }
+    }
+
+    function copiarLinkPreAprovado() {
+        const input = document.getElementById('bandas-link-preaprovado-input');
+        const btn = document.getElementById('bandas-link-preaprovado-btn-copiar');
+        if (!input || !input.value) return;
+
+        const marcarCopiado = () => {
+            const textoOriginal = btn.textContent;
+            btn.textContent = 'Copiado!';
+            btn.classList.add('copiado');
+            setTimeout(() => { btn.textContent = textoOriginal; btn.classList.remove('copiado'); }, 2000);
+        };
+        const fallback = () => { input.select(); document.execCommand('copy'); marcarCopiado(); };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(input.value).then(marcarCopiado).catch(fallback);
+        } else {
+            fallback();
+        }
     }
 
     function copiarLinkCadastroBanda() {
@@ -14102,6 +14292,67 @@
         return false;
     }
 
+    // Modo do formulário público: 'analise' (link normal) ou 'aprovada'
+    // (link pré-aprovado). O token só é conferido de novo na hora de enviar.
+    let cadastroPublicoModo = 'analise';
+    let cadastroPublicoToken = null;
+    let cadpubFotoBase64 = null;
+    let cadpubLogoBase64 = null;
+
+    async function tokenCadastroPreAprovadoValido(token) {
+        if (!token) return false;
+        const resultado = await lerTokenCadastroPreAprovado();
+        return !resultado.erro && resultado.token === token;
+    }
+
+    // Acessado por #cadastro-banda-aprovada=<token>. Se o token não bate
+    // com o link ativo, NÃO cai silenciosamente no fluxo de análise —
+    // mostra que o link não vale mais, pra ninguém achar que se aprovou.
+    async function verificarRotaCadastroPublicoAprovado() {
+        const match = location.hash.match(/^#cadastro-banda-aprovada=([A-Za-z0-9]+)$/);
+        if (!match) return false;
+
+        const loginScreen = document.getElementById('loginScreen');
+        const painelScreen = document.getElementById('painelScreen');
+        const cadastroScreen = document.getElementById('cadastroBandaScreen');
+        if (loginScreen) loginScreen.classList.add('hidden');
+        if (painelScreen) painelScreen.classList.add('hidden');
+        if (cadastroScreen) cadastroScreen.classList.remove('hidden');
+
+        const valido = await tokenCadastroPreAprovadoValido(match[1]);
+        if (!valido) {
+            document.getElementById('cadastro-publico-form-wrap').classList.add('hidden');
+            document.getElementById('cadastro-publico-link-invalido').classList.remove('hidden');
+            return true;
+        }
+
+        cadastroPublicoModo = 'aprovada';
+        cadastroPublicoToken = match[1];
+        document.getElementById('cadpub-intro').textContent =
+            'Sua banda já foi aprovada pela casa. Preencha os dados abaixo para concluir o cadastro — ele já fica ativo, sem passar por análise.';
+        document.getElementById('cadpub-midia-bloco').classList.remove('hidden');
+        generoRenderSelect('cadpub');
+        return true;
+    }
+
+    function cadpubMidiaSelecionada(tipo, input) {
+        const file = input.files[0];
+        input.value = '';
+        if (!file) return;
+        if (!/^image\/(png|jpe?g)$/.test(file.type)) { alert('Envie uma imagem PNG ou JPG.'); return; }
+        if (file.size > 500 * 1024) { alert('Arquivo muito grande. Máximo 500 KB.'); return; }
+
+        const leitor = new FileReader();
+        leitor.onload = (e) => {
+            if (tipo === 'foto') cadpubFotoBase64 = e.target.result;
+            else cadpubLogoBase64 = e.target.result;
+            document.getElementById('cadpub-' + tipo + '-preview').src = e.target.result;
+            document.getElementById('cadpub-' + tipo + '-empty').classList.add('hidden');
+            document.getElementById('cadpub-' + tipo + '-filled').classList.remove('hidden');
+        };
+        leitor.readAsDataURL(file);
+    }
+
     function verificarRotaEventoPublico() {
         const match = location.hash.match(/^#evento-publico=(.+)$/);
         if (!match) return false;
@@ -14266,15 +14517,26 @@
         }
         erroEl.classList.add('hidden');
 
+        // Link pré-aprovado: o token pode ter sido trocado enquanto a
+        // pessoa preenchia o formulário. Confere de novo antes de gravar
+        // qualquer coisa como "Aprovada".
+        const modoAprovado = cadastroPublicoModo === 'aprovada';
+        if (modoAprovado && !(await tokenCadastroPreAprovadoValido(cadastroPublicoToken))) {
+            document.getElementById('cadastro-publico-form-wrap').classList.add('hidden');
+            document.getElementById('cadastro-publico-link-invalido').classList.remove('hidden');
+            return;
+        }
+
         const novoId = 'banda_pub_' + Date.now();
         const redes = instagram ? [{ nome: 'Instagram', url: instagram }] : [];
 
         bandasPerfis[novoId] = {
             nome, genero, responsavel, telefone, email, origem,
-            status: 'em_analise',
+            status: modoAprovado ? 'aprovada' : 'em_analise',
+            origemCadastro: modoAprovado ? 'link_pre_aprovado' : 'link_publico',
             descricao,
-            fotoPerfil: null,
-            logotipo: null,
+            fotoPerfil: modoAprovado ? cadpubFotoBase64 : null,
+            logotipo: modoAprovado ? cadpubLogoBase64 : null,
             fotos: [null, null, null, null],
             integrantes: [{ nome: responsavel, funcao: 'Responsável' }],
             redes,
@@ -14284,6 +14546,11 @@
 
         await sincronizarBanda(novoId);
 
+        if (modoAprovado) {
+            document.getElementById('cadpub-sucesso-titulo').textContent = 'Cadastro concluído!';
+            document.getElementById('cadpub-sucesso-texto').textContent =
+                'Sua banda já está cadastrada e aprovada. Se precisar completar ou alterar algo, é só falar com o responsável pela casa.';
+        }
         document.getElementById('cadastro-publico-form-wrap').classList.add('hidden');
         document.getElementById('cadastro-publico-sucesso').classList.remove('hidden');
     }
@@ -24932,7 +25199,9 @@
         iniciarRealtimeDemandasEQuadros();
         iniciarRealtimeAgenda();
 
-        const ehRotaCadastroBanda = verificarRotaCadastroPublico();
+        const ehRotaCadastroBandaNormal = verificarRotaCadastroPublico();
+        const ehRotaCadastroBandaAprovada = !ehRotaCadastroBandaNormal && await verificarRotaCadastroPublicoAprovado();
+        const ehRotaCadastroBanda = ehRotaCadastroBandaNormal || ehRotaCadastroBandaAprovada;
         const ehRotaConviteUsuario = !ehRotaCadastroBanda && verificarRotaConviteUsuario();
         const ehRotaEditarBanda = !ehRotaCadastroBanda && !ehRotaConviteUsuario && verificarRotaEditarBanda();
         const ehRotaEventoPublico = !ehRotaCadastroBanda && !ehRotaConviteUsuario && !ehRotaEditarBanda && verificarRotaEventoPublico();
