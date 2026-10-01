@@ -5541,6 +5541,9 @@
         .anexo-remover { display: none; }
         .perfil-modo-edicao .anexo-remover { display: flex; }
 
+        .setlist-editavel { display: none; }
+        .perfil-modo-edicao .setlist-editavel { display: flex; }
+
         /* ==============================
            MODAL EXCLUSÃO
            ============================== */
@@ -9485,7 +9488,7 @@
                         <div id="setlist-perfil-secao" style="margin-bottom:20px;">
                             <div class="perfil-section-title">Setlist / Repertório</div>
                             <div class="banda-setlist-upload">
-                                <div id="setlist-perfil-vazio" class="hidden">
+                                <div id="setlist-perfil-vazio" class="hidden setlist-editavel">
                                     <button class="btn-upload" type="button" onclick="document.getElementById('setlist-perfil-input').click()">Enviar arquivo</button>
                                     <span class="upload-hint">PDF, DOC, imagem ou texto · até 2 MB</span>
                                 </div>
@@ -9493,7 +9496,7 @@
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                                     <span id="setlist-perfil-nome"></span>
                                     <a id="setlist-perfil-baixar" href="#" download class="btn-file-action">Baixar</a>
-                                    <button type="button" class="btn-file-action" id="setlist-perfil-btn-alterar" onclick="document.getElementById('setlist-perfil-input').click()">Alterar</button>
+                                    <button type="button" class="btn-file-action setlist-editavel" id="setlist-perfil-btn-alterar" onclick="document.getElementById('setlist-perfil-input').click()">Alterar</button>
                                 </div>
                                 <div id="setlist-perfil-nenhum" class="hidden" style="color:var(--warm-gray); font-size:13px;">Essa banda ainda não enviou o setlist.</div>
                             </div>
@@ -9502,7 +9505,7 @@
 
                         <!-- ANEXOS (título só aparece se houver algum anexo, ou no modo edição) -->
                         <div id="anexos-secao">
-                            <div class="perfil-section-title">Anexos técnicos <span style="font-weight: 400; color: var(--warm-gray);">(setlist, mapa de palco, rider, entre outros)</span></div>
+                            <div class="perfil-section-title">Outros arquivos <span style="font-weight: 400; color: var(--warm-gray);">(opcional — mapa de palco, rider, contrato, entre outros)</span></div>
                             <div id="anexos-lista"></div>
                             <button class="btn-add-anexo" id="btn-add-anexo" onclick="triggerAnexoUpload()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -15765,22 +15768,20 @@
     }
 
     function renderSetlistPerfil() {
-        const podeEditar = temPermissao('gerenciarBandas');
         const vazio = document.getElementById('setlist-perfil-vazio');
         const preenchido = document.getElementById('setlist-perfil-preenchido');
         const nenhum = document.getElementById('setlist-perfil-nenhum');
 
         const temSetlist = !!(banda.setlist && banda.setlist.dataUrl);
-        vazio.classList.toggle('hidden', temSetlist || !podeEditar);
+        vazio.classList.toggle('hidden', temSetlist);
         preenchido.classList.toggle('hidden', !temSetlist);
-        nenhum.classList.toggle('hidden', temSetlist || podeEditar);
+        nenhum.classList.toggle('hidden', temSetlist);
 
         if (temSetlist) {
             document.getElementById('setlist-perfil-nome').textContent = banda.setlist.nome;
             const btnBaixar = document.getElementById('setlist-perfil-baixar');
             btnBaixar.href = banda.setlist.dataUrl;
             btnBaixar.setAttribute('download', banda.setlist.nome);
-            document.getElementById('setlist-perfil-btn-alterar').classList.toggle('hidden', !podeEditar);
         }
     }
 
