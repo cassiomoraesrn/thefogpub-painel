@@ -641,6 +641,41 @@
             margin-bottom: 16px;
         }
 
+        .banda-setlist-aviso {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            background: #FEF3C7;
+            color: #92400E;
+            border-left: 3px solid #F59E0B;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        .banda-setlist-aviso svg { flex-shrink: 0; margin-top: 1px; }
+
+        .banda-setlist-upload {
+            border: 1.5px dashed var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .banda-setlist-upload #cadpub-setlist-vazio,
+        .banda-setlist-upload #setlist-perfil-vazio {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .banda-setlist-arquivo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        .banda-setlist-arquivo span { flex: 1; word-break: break-all; }
+
         .cadastro-publico-sucesso {
             text-align: center;
             padding: 20px 0;
@@ -8476,6 +8511,26 @@
                     <textarea id="cadpub-descricao" class="form-input" rows="4" placeholder="Conte um pouco sobre a banda, tempo de estrada, repertório..."></textarea>
                 </div>
 
+                <div class="form-row">
+                    <label class="form-label">Setlist / Repertório *</label>
+                    <div class="banda-setlist-aviso">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>Essa casa toca Rock and Roll, Blues e Rock Country. Não aceitamos repertório de rock nacional, samba, MPB, pagode, funk ou sertanejo.</span>
+                    </div>
+                    <div class="banda-setlist-upload">
+                        <div id="cadpub-setlist-vazio">
+                            <button class="btn-upload" type="button" onclick="document.getElementById('cadpub-setlist-input').click()">Enviar arquivo</button>
+                            <span class="upload-hint">PDF, DOC, imagem ou texto · até 2 MB</span>
+                        </div>
+                        <div id="cadpub-setlist-preenchido" class="hidden banda-setlist-arquivo">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                            <span id="cadpub-setlist-nome"></span>
+                            <button type="button" class="btn-file-action" onclick="document.getElementById('cadpub-setlist-input').click()">Alterar</button>
+                        </div>
+                    </div>
+                    <input type="file" id="cadpub-setlist-input" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" style="display:none" onchange="cadpubSetlistSelecionado(this)">
+                </div>
+
                 <!-- Só aparece no link pré-aprovado: foto e logotipo já no cadastro -->
                 <div id="cadpub-midia-bloco" class="hidden">
                     <div class="form-row">
@@ -9424,6 +9479,25 @@
                             <div id="equip-casa-perfil-lista" class="equip-casa-perfil-lista">
                                 <!-- Preenchido via JS: equipamentosCasaRenderPerfil() -->
                             </div>
+                        </div>
+
+                        <!-- SETLIST / REPERTÓRIO -->
+                        <div id="setlist-perfil-secao" style="margin-bottom:20px;">
+                            <div class="perfil-section-title">Setlist / Repertório</div>
+                            <div class="banda-setlist-upload">
+                                <div id="setlist-perfil-vazio" class="hidden">
+                                    <button class="btn-upload" type="button" onclick="document.getElementById('setlist-perfil-input').click()">Enviar arquivo</button>
+                                    <span class="upload-hint">PDF, DOC, imagem ou texto · até 2 MB</span>
+                                </div>
+                                <div id="setlist-perfil-preenchido" class="hidden banda-setlist-arquivo">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                    <span id="setlist-perfil-nome"></span>
+                                    <a id="setlist-perfil-baixar" href="#" download class="btn-file-action">Baixar</a>
+                                    <button type="button" class="btn-file-action" id="setlist-perfil-btn-alterar" onclick="document.getElementById('setlist-perfil-input').click()">Alterar</button>
+                                </div>
+                                <div id="setlist-perfil-nenhum" class="hidden" style="color:var(--warm-gray); font-size:13px;">Essa banda ainda não enviou o setlist.</div>
+                            </div>
+                            <input type="file" id="setlist-perfil-input" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" style="display:none" onchange="setlistPerfilSelecionado(this)">
                         </div>
 
                         <!-- ANEXOS (título só aparece se houver algum anexo, ou no modo edição) -->
@@ -14302,6 +14376,23 @@
     let cadastroPublicoToken = null;
     let cadpubFotoBase64 = null;
     let cadpubLogoBase64 = null;
+    let cadpubSetlistArquivo = null;
+
+    function cadpubSetlistSelecionado(input) {
+        const file = input.files[0];
+        input.value = '';
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { alert('Arquivo muito grande. Máximo 2 MB.'); return; }
+
+        const leitor = new FileReader();
+        leitor.onload = (e) => {
+            cadpubSetlistArquivo = { nome: file.name, tamanho: Math.round(file.size / 1024) + ' KB', dataUrl: e.target.result };
+            document.getElementById('cadpub-setlist-nome').textContent = file.name;
+            document.getElementById('cadpub-setlist-vazio').classList.add('hidden');
+            document.getElementById('cadpub-setlist-preenchido').classList.remove('hidden');
+        };
+        leitor.readAsDataURL(file);
+    }
 
     async function tokenCadastroPreAprovadoValido(token) {
         if (!token) return false;
@@ -14513,6 +14604,7 @@
         if (!responsavel) faltando.push('Nome do responsável');
         if (!telefone) faltando.push('Telefone');
         if (!email) faltando.push('E-mail');
+        if (!cadpubSetlistArquivo) faltando.push('Setlist/Repertório');
 
         if (faltando.length > 0) {
             erroEl.textContent = 'Preencha os campos obrigatórios: ' + faltando.join(', ') + '.';
@@ -14541,6 +14633,7 @@
             descricao,
             fotoPerfil: modoAprovado ? cadpubFotoBase64 : null,
             logotipo: modoAprovado ? cadpubLogoBase64 : null,
+            setlist: cadpubSetlistArquivo,
             fotos: [null, null, null, null],
             integrantes: [{ nome: responsavel, funcao: 'Responsável' }],
             redes,
@@ -14626,6 +14719,9 @@
 
         // Equipamentos da casa
         equipamentosCasaRenderPerfil();
+
+        // Setlist / Repertório
+        renderSetlistPerfil();
 
         // Anexos
         renderAnexos();
@@ -15666,6 +15762,41 @@
         const modal = document.getElementById('modal-suporte-faq-admin');
         modal.classList.add('hidden');
         modal.classList.remove('active');
+    }
+
+    function renderSetlistPerfil() {
+        const podeEditar = temPermissao('gerenciarBandas');
+        const vazio = document.getElementById('setlist-perfil-vazio');
+        const preenchido = document.getElementById('setlist-perfil-preenchido');
+        const nenhum = document.getElementById('setlist-perfil-nenhum');
+
+        const temSetlist = !!(banda.setlist && banda.setlist.dataUrl);
+        vazio.classList.toggle('hidden', temSetlist || !podeEditar);
+        preenchido.classList.toggle('hidden', !temSetlist);
+        nenhum.classList.toggle('hidden', temSetlist || podeEditar);
+
+        if (temSetlist) {
+            document.getElementById('setlist-perfil-nome').textContent = banda.setlist.nome;
+            const btnBaixar = document.getElementById('setlist-perfil-baixar');
+            btnBaixar.href = banda.setlist.dataUrl;
+            btnBaixar.setAttribute('download', banda.setlist.nome);
+            document.getElementById('setlist-perfil-btn-alterar').classList.toggle('hidden', !podeEditar);
+        }
+    }
+
+    function setlistPerfilSelecionado(input) {
+        const file = input.files[0];
+        input.value = '';
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { alert('Arquivo muito grande. Máximo 2 MB.'); return; }
+
+        const leitor = new FileReader();
+        leitor.onload = async (e) => {
+            banda.setlist = { nome: file.name, tamanho: Math.round(file.size / 1024) + ' KB', dataUrl: e.target.result };
+            renderSetlistPerfil();
+            await sincronizarBanda(bandaAtualId);
+        };
+        leitor.readAsDataURL(file);
     }
 
     function renderAnexos() {
