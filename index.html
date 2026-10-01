@@ -13979,6 +13979,10 @@
 
         const temLink = !!linkPreAprovadoToken;
         input.value = temLink ? gerarLinkCadastroPreAprovado(linkPreAprovadoToken) : '';
+        // O link fica bem mais longo que o normal (tem o código no final) —
+        // sem isso, os dois campos mostram só "...#cadastro-banda" no
+        // começo e parecem iguais. Rola pro final pra mostrar o código.
+        if (temLink) { input.scrollLeft = input.scrollWidth; }
         input.classList.toggle('hidden', !temLink);
         btnCopiar.classList.toggle('hidden', !temLink);
         btnGerar.textContent = temLink ? 'Gerar novo link' : 'Gerar link';
